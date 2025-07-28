@@ -5,28 +5,22 @@ from .models import Brand, Collaboration
 class BrandSerializer(serializers.ModelSerializer):
     class Meta:
         model = Brand
-        fields = '__all__'
+        fields = ['id', 'name', 'email', 'phone', 'website', 'instagram_handle', 'category', 'created_at']
 
 
 class CollaborationSerializer(serializers.ModelSerializer):
-    brand_name = serializers.CharField(source='brand.name', read_only=True)
+    brand = BrandSerializer(read_only=True)  # show nested brand in GET
+    brand_id = serializers.PrimaryKeyRelatedField(
+        queryset=Brand.objects.all(),
+        source='brand',  # use `brand_id` to write to `brand`
+        write_only=True
+    )
 
     class Meta:
         model = Collaboration
-        fields = '__all__'
-
-    def validate(self, data):
-        collab_type = data.get('collab_type')
-        barter_product = data.get('barter_product')
-
-        if collab_type == 'barter' and not barter_product:
-            raise serializers.ValidationError({
-                'barter_product': "This field is required for barter collaborations."
-            })
-
-        if collab_type != 'barter' and barter_product:
-            raise serializers.ValidationError({
-                'barter_product': "Only allowed if collab type is 'barter'."
-            })
-
-        return data
+        fields = [
+            'id', 'brand', 'brand_id', 'campaign_name', 'platform', 'collab_type',
+            'status', 'pitch_date', 'followup_date', 'delivery_deadline',
+            'deliverables', 'notes', 'amount', 'barter_product', 'barter_value',
+            'created_at'
+        ]
