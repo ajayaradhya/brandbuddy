@@ -11,6 +11,14 @@ from drf_yasg import openapi
 from .models import Brand, Collaboration
 from .serializers import BrandSerializer, CollaborationSerializer
 
+from django.utils.timezone import now
+from django.db.models import Count, Sum
+from django.db.models.functions import TruncMonth
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+from core.models import Brand, Collaboration
+
 
 class BrandViewSet(viewsets.ModelViewSet):
     queryset = Brand.objects.all().order_by('-created_at')
@@ -56,3 +64,69 @@ class CollaborationViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(overdue_qs, many=True)
         return Response(serializer.data)
+
+
+swagger_auto_schema(
+    method='get',
+    operation_summary="Dashboard Overview",
+    operation_description="Returns aggregated insights about brands and collaborations for dashboard widgets."
+)
+@api_view(['GET'])
+def dashboard_view(request):
+    today = now().date()
+
+    # Total counts
+    total_brands = Brand.objects.count()
+    total_collabs = Collaboration.objects.count()
+
+    # Collabs by status
+    status_counts = Collaboration.objects.values('status').annotate(count=Count('id')).order_by('status')
+
+    # Collabs by type
+    type_counts = Collaboration.objects.values('collab_type').annotate(count=Count('id')).order_by('collab_type')
+
+    # Monthly collaborations since 6 months
+    six_months_ago = today - timezone.timedelta(days=180)
+    monthly_data = (
+        Collaboration.objects.filter(created_at__gte=six_months_ago)
+        .annotate(month=TruncMonth('created_at'))
+        .values('month')
+        .annotate(count=Count('id'), total_amount=Sum('amount'))
+        .order_by('month')
+    )
+
+    # Overdue followups
+    overdue_followups = Collaboration.objects.filter(
+        followup_date__lt=today
+    ).exclude(
+        status__in=["delivered", "paid"]
+    ).count()
+
+    # upcoming deliveries
+    upcoming_deliveries = Collaboration.objects.filter(
+        delivery_deadline__gte=today
+    ).exclude(
+        status__in=["delivered", "paid"]
+    ).count()
+
+    # Total paid amount
+    total_paid_amount = Collaboration.objects.filter(status='paid').aggregate(Sum('amount'))['amount__sum'] or 0
+
+    # Total barter value
+    total_barter_value = Collaboration.objects.filter(collab_type='barter').aggregate(Sum('barter_value'))['barter_value__sum'] or 0
+
+    return Response({
+        'total_brands': total_brands,
+        'total_collabs': total_collabs,
+        'status_counts': {item['status']: item['count'] for item in status_counts},
+        'type_counts': {item['collab_type']: item['count'] for item in  type_counts},
+        'monthly_data': [       {
+            'month': item['month'].strftime('%Y-%m'),
+            'count': item['count'],
+            'total_amount': item['total_amount'] or 0,
+        } for item in monthly_data],
+        'overdue_followups': overdue_followups,
+        'upcoming_deliveries': upcoming_deliveries,
+        'total_paid_amount': total_paid_amount,
+        'total_barter_value': total_barter_value,
+    })
