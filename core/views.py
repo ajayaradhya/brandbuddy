@@ -1,5 +1,7 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, filters
+
+from core.filters import CollaborationFilter
 from .models import Brand, Collaboration
 from .serializers import BrandSerializer, CollaborationSerializer
 
@@ -16,6 +18,7 @@ class CollaborationViewSet(viewsets.ModelViewSet):
     serializer_class = CollaborationSerializer
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = CollaborationFilter
     
     # Fields to filter directly via query params
     filterset_fields = {
