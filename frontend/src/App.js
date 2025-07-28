@@ -1,25 +1,13 @@
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+// App.jsx
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Dashboard from "./pages/Dashboard";
 
-function App() {
-  const [brands, setBrands] = useState([]);
-
-  useEffect(() => {
-    axios.get('http://127.0.0.1:8000/api/brands/')
-      .then(res => setBrands(res.data.results))
-      .catch(err => console.error(err));
-  }, []);
-
+export default function App() {
   return (
-    <div>
-      <h1>BrandBuddy Dashboard</h1>
-      <ul>
-        {brands.map(brand => (
-          <li key={brand.id}>{brand.name}</li>
-        ))}
-      </ul>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+      </Routes>
+    </Router>
   );
 }
-
-export default App;
