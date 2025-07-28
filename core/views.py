@@ -3,6 +3,10 @@ from rest_framework import viewsets, filters
 
 from core.filters import CollaborationFilter
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django.utils import timezone
+from datetime import date
 from drf_yasg import openapi
 from .models import Brand, Collaboration
 from .serializers import BrandSerializer, CollaborationSerializer
@@ -32,3 +36,23 @@ class CollaborationViewSet(viewsets.ModelViewSet):
     ])
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
+    
+    @swagger_auto_schema(
+        operation_description="Get collaborations with overdue follow-ups (followup_date < today and not closed/completed)."
+    )
+    @action(detail=False, methods=["get"], url_path="overdue-followups")
+    def overdue_followups(self, request):
+        today = date.today()
+        overdue_qs = self.get_queryset().filter(
+            followup_date__lt=today,
+        ).exclude(
+            status__in=["delivered", "paid"]
+        )
+
+        page = self.paginate_queryset(overdue_qs)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(overdue_qs, many=True)
+        return Response(serializer.data)
