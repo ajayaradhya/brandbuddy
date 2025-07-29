@@ -7,7 +7,8 @@ export default function UpcomingCampaigns() {
   useEffect(() => {
     axios.get("http://127.0.0.1:8000/api/collaborations/")
       .then(res => {
-        const upcoming = res.data.results.filter(c => new Date(c.start_date) > new Date());
+        // const upcoming = res.data.results.filter(c => new Date(c.start_date) > new Date());
+        const upcoming = res.data.results;
         setCampaigns(upcoming.slice(0, 5));
       })
       .catch(err => console.error(err));
@@ -19,7 +20,7 @@ export default function UpcomingCampaigns() {
       <ul className="divide-y divide-gray-200">
         {campaigns.map(c => (
           <li key={c.id} className="py-2">
-            <strong>{c.brand.name}</strong> – starts on {new Date(c.start_date).toDateString()}
+            <strong>{c.brand.name}</strong> – to be delivered on {new Date(c.delivery_deadline).toDateString()}
           </li>
         ))}
       </ul>

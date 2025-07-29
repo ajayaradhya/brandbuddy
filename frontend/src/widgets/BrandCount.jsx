@@ -6,7 +6,7 @@ export default function BrandCount() {
 
   useEffect(() => {
     axios.get("http://127.0.0.1:8000/api/brands/")
-      .then(res => setCount(res.data.length))
+      .then(res => setCount(res.data.count))
       .catch(err => console.error(err));
   }, []);
 
