@@ -7,8 +7,8 @@ export default function UpcomingCampaigns() {
   useEffect(() => {
     axios.get("http://127.0.0.1:8000/api/collaborations/")
       .then(res => {
-        // const upcoming = res.data.results.filter(c => new Date(c.start_date) > new Date());
-        const upcoming = res.data.results;
+        const upcoming = res.data.filter(c => new Date(c.delivery_deadline) > new Date());
+        // const upcoming = res.data;
         setCampaigns(upcoming.slice(0, 5));
       })
       .catch(err => console.error(err));

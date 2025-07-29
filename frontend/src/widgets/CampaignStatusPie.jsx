@@ -10,7 +10,7 @@ export default function CampaignStatusPie() {
   useEffect(() => {
     axios.get("http://127.0.0.1:8000/api/collaborations/")
       .then(res => {
-        const grouped = res.data.results.reduce((acc, curr) => {
+        const grouped = res.data.reduce((acc, curr) => {
           acc[curr.status] = (acc[curr.status] || 0) + 1;
           return acc;
         }, {});
