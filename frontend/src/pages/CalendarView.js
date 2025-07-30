@@ -1,192 +1,177 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin from '@fullcalendar/interaction';
-import {
-  Box,
-  Typography,
-  Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  Grid,
-  Chip,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
-  useTheme,
-} from '@mui/material';
 
-const EVENT_TYPES = {
-  collaboration_start: {
-    label: 'Collaboration Start',
-    color: '#2196f3',
-    description: 'This collaboration started on this day.',
-  },
-  collaboration_end: {
-    label: 'Collaboration End',
-    color: '#f44336',
-    description: 'This collaboration ended on this day.',
-  },
-  followup: {
-    label: 'Follow-up',
-    color: '#ff9800',
-    description: 'This is the scheduled follow-up date.',
-  },
-  delivery_deadline: {
-    label: 'Delivery Deadline',
-    color: '#4caf50',
-    description: 'Deliverables are due on this date.',
-  },
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import FullCalendar from '@fullcalendar/react';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import CloseIcon from '@mui/icons-material/Close';
+import {
+    Box,
+    Chip,
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    FormControl,
+    Grid,
+    IconButton,
+    InputLabel,
+    MenuItem,
+    Select,
+    Typography
+} from '@mui/material';
+import axios from 'axios';
+import { useEffect, useState } from 'react';
+import '../style/CalendarView.css';
+
+const eventTypeLabels = {
+  collaboration_start: 'Collaboration Start',
+  collaboration_end: 'Collaboration End',
+  followup: 'Follow-up',
+  delivery_deadline: 'Delivery Deadline',
+};
+
+const eventColors = {
+  collaboration_start: '#1E90FF',
+  collaboration_end: '#FF4C4C',
+  followup: '#FFA500',
+  delivery_deadline: '#32CD32',
 };
 
 const CalendarView = () => {
-  const [allEvents, setAllEvents] = useState([]);
-  const [filteredEvents, setFilteredEvents] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [eventTypeFilter, setEventTypeFilter] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
-  const theme = useTheme();
 
   useEffect(() => {
     const fetchEvents = async () => {
-      try {
-        const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/calendar-view`);
-        const formatted = response.data.events.map((event) => {
-          const typeMeta = EVENT_TYPES[event.type] || {};
-          return {
-            ...event,
-            backgroundColor: typeMeta.color || theme.palette.grey[600],
-            borderColor: typeMeta.color || theme.palette.grey[600],
-          };
-        });
-        setAllEvents(formatted);
-        setFilteredEvents(formatted);
-      } catch (error) {
-        console.error('Failed to fetch calendar events:', error);
-      }
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/calendar-view`);
+      setEvents(response.data.events);
     };
-
     fetchEvents();
-  }, [theme.palette.grey]);
+  }, []);
 
-  const filterEvents = () => {
-    let filtered = [...allEvents];
-    if (eventTypeFilter) {
-      filtered = filtered.filter((event) => event.type === eventTypeFilter);
-    }
-    if (brandFilter) {
-      filtered = filtered.filter((event) =>
-        event.title.toLowerCase().includes(brandFilter.toLowerCase())
-      );
-    }
-    setFilteredEvents(filtered);
+  const handleEventClick = (clickInfo) => {
+    setSelectedEvent(clickInfo.event.extendedProps);
+    setModalOpen(true);
   };
 
-  useEffect(() => {
-    filterEvents();
-  }, [eventTypeFilter, brandFilter, allEvents]);
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedEvent(null);
+  };
 
-  const renderEventWithTooltip = (info) => (
-    <Tooltip title={info.event.title}>
-      <div style={{ padding: '3px 6px', fontSize: '0.8rem' }}>
-        {info.event.title}
-      </div>
-    </Tooltip>
-  );
+  const filteredEvents = events.filter((event) => {
+    const brandMatch = brandFilter ? event.title.includes(brandFilter) : true;
+    const typeMatch = eventTypeFilter ? event.type === eventTypeFilter : true;
+    return brandMatch && typeMatch;
+  });
 
-  const selectedType = selectedEvent?.extendedProps?.type;
-  const typeMeta = EVENT_TYPES[selectedType] || {};
-
-  const brandNames = [...new Set(allEvents.map((e) => e.title.split(' - ')[0]))];
+  const brands = [...new Set(events.map((e) => e.title.split(' - ')[0]))];
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h5" gutterBottom fontWeight="bold">
-        🗓️ Collaboration Calendar
-      </Typography>
-
-      {/* Filters */}
-      <Grid container spacing={2} alignItems="center" sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={4}>
-          <FormControl fullWidth>
+    <Box p={3}>
+      <Grid container spacing={2} alignItems="center" mb={2}>
+        <Grid item>
+          {Object.entries(eventColors).map(([key, color]) => (
+            <Chip key={key} label={eventTypeLabels[key]} style={{ backgroundColor: color, color: '#fff', marginRight: '8px' }} />
+          ))}
+        </Grid>
+        <Grid item>
+          <FormControl size="small">
             <InputLabel>Event Type</InputLabel>
             <Select
               value={eventTypeFilter}
               onChange={(e) => setEventTypeFilter(e.target.value)}
               label="Event Type"
+              style={{ minWidth: 150 }}
             >
               <MenuItem value="">All</MenuItem>
-              {Object.entries(EVENT_TYPES).map(([key, val]) => (
-                <MenuItem key={key} value={key}>
-                  {val.label}
-                </MenuItem>
+              {Object.keys(eventTypeLabels).map((type) => (
+                <MenuItem key={type} value={type}>{eventTypeLabels[type]}</MenuItem>
               ))}
             </Select>
           </FormControl>
         </Grid>
-
-        <Grid item xs={12} sm={4}>
-          <FormControl fullWidth>
+        <Grid item>
+          <FormControl size="small">
             <InputLabel>Brand</InputLabel>
             <Select
               value={brandFilter}
               onChange={(e) => setBrandFilter(e.target.value)}
               label="Brand"
+              style={{ minWidth: 150 }}
             >
               <MenuItem value="">All</MenuItem>
-              {brandNames.map((brand) => (
-                <MenuItem key={brand} value={brand}>
-                  {brand}
-                </MenuItem>
+              {brands.map((brand) => (
+                <MenuItem key={brand} value={brand}>{brand}</MenuItem>
               ))}
             </Select>
           </FormControl>
         </Grid>
       </Grid>
 
-      {/* Legend */}
-      <Grid container spacing={1} sx={{ mb: 2 }}>
-        {Object.entries(EVENT_TYPES).map(([key, { label, color }]) => (
-          <Grid item key={key}>
-            <Chip label={label} size="small" sx={{ bgcolor: color, color: '#fff' }} />
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* Calendar */}
       <FullCalendar
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
         headerToolbar={{
-          start: 'dayGridMonth,timeGridWeek,timeGridDay',
+          start: 'prev,next today',
           center: 'title',
-          end: 'today prev,next',
+          end: 'dayGridMonth,timeGridWeek,timeGridDay'
         }}
         height="auto"
-        events={filteredEvents}
-        eventClick={({ event }) => setSelectedEvent(event)}
-        eventContent={renderEventWithTooltip}
+        events={filteredEvents.map((e) => ({
+          title: e.title,
+          date: e.date,
+          backgroundColor: eventColors[e.type],
+          borderColor: eventColors[e.type],
+          extendedProps: {
+            ...e
+          }
+        }))}
+        eventClick={handleEventClick}
+        eventDisplay="block"
       />
 
-      {/* Modal */}
-      <Dialog open={!!selectedEvent} onClose={() => setSelectedEvent(null)}>
-        <DialogTitle>{selectedEvent?.title}</DialogTitle>
+      <Dialog
+        open={modalOpen}
+        onClose={handleCloseModal}
+        maxWidth="xs"
+        fullWidth
+        >
+        <DialogTitle sx={{ m: 0, p: 2 }}>
+            {selectedEvent?.title}
+            <IconButton
+            aria-label="close"
+            onClick={handleCloseModal}
+            sx={{
+                position: 'absolute',
+                right: 8,
+                top: 8,
+                color: (theme) => theme.palette.grey[500],
+            }}
+            >
+            <CloseIcon />
+            </IconButton>
+        </DialogTitle>
+
         <DialogContent dividers>
-          <Typography variant="subtitle1">
-            <strong>Date:</strong> {selectedEvent?.startStr}
-          </Typography>
-          <Typography variant="subtitle1" sx={{ mt: 1 }}>
-            <strong>Event:</strong> {typeMeta.label || selectedType}
-          </Typography>
-          <Typography variant="body2" sx={{ mt: 1 }}>
-            {typeMeta.description || 'Event related to collaboration milestone.'}
-          </Typography>
+            {selectedEvent && (
+            <>
+                <Typography gutterBottom>
+                <b>Date:</b> {selectedEvent.date}
+                </Typography>
+                <Typography gutterBottom>
+                <b>Event:</b> {eventTypeLabels[selectedEvent.type]}
+                </Typography>
+                <Typography mt={1}>
+                This {eventTypeLabels[selectedEvent.type]?.toLowerCase()} is scheduled for {selectedEvent.date}.
+                </Typography>
+            </>
+            )}
         </DialogContent>
-      </Dialog>
+        </Dialog>
+
     </Box>
   );
 };

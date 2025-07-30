@@ -7,7 +7,7 @@ const routeToTitle = {
   '/': 'Dashboard',
   '/brands': 'Brands',
   '/campaigns': 'Campaigns',
-  '/calendar': 'Brand Calendar',
+  '/calendar': 'Collaboration Calendar',
   '/settings': 'Settings',
 };
 

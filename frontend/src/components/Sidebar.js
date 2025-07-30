@@ -49,7 +49,7 @@ const Sidebar = () => {
           variant="h6"
           noWrap
           component="div"
-          sx={{ ml: 1, fontWeight: 700, color: '#4a148c' }}
+          sx={{ ml: 1, fontWeight: 700, color: '#000000ff' }}
         >
           BrandBuddy
         </Typography>
@@ -69,7 +69,7 @@ const Sidebar = () => {
                 mb: 0.5,
                 mx: 1,
                 borderRadius: 1,
-                color: isActive ? '#4a148c' : '#555',
+                color: isActive ? '#000000ff' : '#555',
                 backgroundColor: isActive ? '#f3e5f5' : 'transparent',
                 '&:hover': {
                   backgroundColor: '#f9f9f9',
@@ -81,7 +81,7 @@ const Sidebar = () => {
               className={isActive ? 'active' : ''}
             >
               <Tooltip title={text} placement="right" arrow>
-                <ListItemIcon sx={{ color: isActive ? '#4a148c' : '#888' }}>
+                <ListItemIcon sx={{ color: isActive ? '#000000ff' : '#888' }}>
                   {icon}
                 </ListItemIcon>
               </Tooltip>
