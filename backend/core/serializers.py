@@ -5,7 +5,7 @@ from .models import Brand, Collaboration
 class BrandSerializer(serializers.ModelSerializer):
     class Meta:
         model = Brand
-        fields = ['id', 'name', 'email', 'phone', 'website', 'instagram_handle', 'category', 'created_at']
+        fields = '__all__' 
 
 
 class CollaborationSerializer(serializers.ModelSerializer):

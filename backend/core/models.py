@@ -1,17 +1,27 @@
 from django.db import models
 
 class Brand(models.Model):
-    name = models.CharField(max_length=255)
+    STATUS_CHOICES = (
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+        ('archived', 'Archived'),
+    )
+
+    name = models.CharField(max_length=255, unique=True)
     website = models.URLField(blank=True, null=True)
     instagram_handle = models.CharField(max_length=255, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
-    category = models.CharField(max_length=100, blank=True, null=True)  # e.g., Travel, Fashion, Food
-
+    category = models.CharField(max_length=100, blank=True, null=True)  # Travel, Fashion, etc.
+    description = models.TextField(blank=True, null=True)
+    logo = models.ImageField(upload_to='brand_logos/', blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
+
 
 
 class Collaboration(models.Model):

@@ -21,8 +21,14 @@ from .serializers import BrandSerializer, CollaborationSerializer
 class BrandViewSet(viewsets.ModelViewSet):
     queryset = Brand.objects.all().order_by('-created_at')
     serializer_class = BrandSerializer
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['name']  # Allow searching brands by name
+    permission_classes = []  # Add [IsAuthenticated] if you need auth
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    
+    # Enable filters and search
+    filterset_fields = ['status', 'category']  # Use for dropdown filters on frontend
+    search_fields = ['name', 'instagram_handle', 'email']  # Free text search
+    ordering_fields = ['created_at', 'name']  # Enable sorting
+    ordering = ['-created_at']
 
 
 class CollaborationViewSet(viewsets.ModelViewSet):
