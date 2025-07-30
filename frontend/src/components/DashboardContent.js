@@ -5,6 +5,7 @@ import axios from "axios";
 import CollabTypePieChart from "./charts/CollabTypePieChart";
 import MonthlyBarChart from "./charts/MonthlyBarChart";
 import ReminderCard from "./ReminderCard";
+import TopBrandsCard from "./TopBrandsCard";
 
 const DashboardContent = () => {
   const [data, setData] = useState(null);
@@ -61,6 +62,9 @@ const DashboardContent = () => {
         </Grid>
         <Grid item xs={12} md={6} sx={{ display: "flex" }}>
           <MonthlyBarChart data={data.monthly_data} />
+        </Grid>
+        <Grid item xs={12} md={6} sx={{ display: "flex" }}>
+          <TopBrandsCard data={data.top_brands} />
         </Grid>
       </Grid>
 
