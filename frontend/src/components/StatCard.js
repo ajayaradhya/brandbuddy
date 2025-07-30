@@ -1,12 +1,14 @@
-import { Paper, Typography } from '@mui/material';
+import { Card, CardContent, Typography } from "@mui/material";
 
-const StatCard = ({ label, value }) => {
+export default function StatCard({ label, value }) {
   return (
-    <Paper elevation={3} sx={{ padding: 2, minWidth: 180 }}>
-      <Typography variant="h6">{value}</Typography>
-      <Typography color="textSecondary">{label}</Typography>
-    </Paper>
+    <Card>
+      <CardContent>
+        <Typography variant="body2" color="textSecondary">
+          {label}
+        </Typography>
+        <Typography variant="h6">{value}</Typography>
+      </CardContent>
+    </Card>
   );
-};
-
-export default StatCard;
+}

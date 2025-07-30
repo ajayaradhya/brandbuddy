@@ -7,6 +7,6 @@ router.register(r'brands', BrandViewSet)
 router.register(r'collaborations', CollaborationViewSet)
 
 urlpatterns = [
-    path('dashboard/', dashboard_view),
+    path('dashboard-view/', dashboard_view),
     path('', include(router.urls)),
 ]

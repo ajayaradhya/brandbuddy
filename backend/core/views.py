@@ -66,11 +66,6 @@ class CollaborationViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-swagger_auto_schema(
-    method='get',
-    operation_summary="Dashboard Overview",
-    operation_description="Returns aggregated insights about brands and collaborations for dashboard widgets."
-)
 @api_view(['GET'])
 def dashboard_view(request):
     today = now().date()
