@@ -24,32 +24,48 @@ const DashboardContent = () => {
     );
   }
 
+  const formatINR = (amount) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }).format(amount) + " k";
+
   return (
-    <Box p={3}>
+    <Box p={3} width="100%">
       <Typography variant="h5" gutterBottom>
         Dashboard
       </Typography>
 
       {/* Top Stats */}
       <Grid container spacing={2} mb={3}>
-        <Grid item><StatCard label="Total Brands" value={data.total_brands} /></Grid>
-        <Grid item><StatCard label="Total Collabs" value={data.total_collabs} /></Grid>
-        <Grid item><StatCard label="Paid Amount" value={`₹${data.total_paid_amount}`} /></Grid>
-        <Grid item><StatCard label="Barter Value" value={`₹${data.total_barter_value}`} /></Grid>
+        <Grid item xs={6} md={3}>
+          <StatCard label="Total Brands" value={data.total_brands} />
+        </Grid>
+        <Grid item xs={6} md={3}>
+          <StatCard label="Total Collabs" value={data.total_collabs} />
+        </Grid>
+        <Grid item xs={6} md={3}>
+          <StatCard label="Paid Amount" value={formatINR(data.total_paid_amount / 1000)} />
+        </Grid>
+        <Grid item xs={6} md={3}>
+          <StatCard label="Barter Value" value={formatINR(data.total_barter_value / 1000)} />
+        </Grid>
       </Grid>
 
       {/* Charts */}
-      <Grid container spacing={3} mb={3}>
-        <Grid item xs={12} md={6}>
+      <Grid container spacing={2}>
+        <Grid item xs={12} md={6} sx={{ display: "flex" }}>
           <CollabTypePieChart data={data.type_counts} />
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={6} sx={{ display: "flex" }}>
           <MonthlyBarChart data={data.monthly_data} />
         </Grid>
       </Grid>
 
       {/* Reminders */}
-      <Grid container spacing={2}>
+      <Grid container spacing={2} mt={2}>
         <Grid item xs={6}>
           <ReminderCard label="Overdue Followups" count={data.overdue_followups} />
         </Grid>

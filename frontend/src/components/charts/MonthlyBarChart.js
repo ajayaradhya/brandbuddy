@@ -1,7 +1,23 @@
 import { useEffect, useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  LabelList
+} from "recharts";
 import axios from "axios";
 import { Card, CardContent, Typography } from "@mui/material";
+
+// Format number like ₹27.7k, ₹1.2L etc.
+const formatINR = (value) => {
+  if (value >= 100000) return `₹${(value / 100000).toFixed(1)}L`;
+  if (value >= 1000) return `₹${(value / 1000).toFixed(1)}k`;
+  return `₹${value}`;
+};
 
 export default function MonthlyBarChart() {
   const [data, setData] = useState([]);
@@ -14,35 +30,43 @@ export default function MonthlyBarChart() {
           collaborations: item.count,
           revenue: item.total_amount,
         }));
-        
-        console.log("formatted:", formatted);
         setData(formatted);
       });
   }, []);
 
-  // const data = [
-  //   { month: "2025-01", collaborations: 10, revenue: 10000 },
-  //   { month: "2025-02", collaborations: 15, revenue: 12000 },
-  //   { month: "2025-03", collaborations: 20, revenue: 15000 },
-  //   { month: "2025-04", collaborations: 30, revenue: 18000 },
-  //   { month: "2025-05", collaborations: 25, revenue: 20000 },
-  //   { month: "2025-06", collaborations: 40, revenue: 25000 },
-  //   { month: "2025-07", collaborations: 50, revenue: 198248.46 },
-  // ];
-
-
   return (
-    <Card sx={{ width:"100%", height: 400 }}>
-      <CardContent>
-        <Typography variant="h6" gutterBottom>Monthly Collaborations</Typography>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={data}>
-            <XAxis dataKey="month" />
-            <YAxis />
-            <Tooltip />
+    <Card sx={{ flexGrow: 1, width: '100%', height: 400 }}>
+      <CardContent sx={{ height: '100%' }}>
+        <Typography variant="h6" gutterBottom>
+          Monthly Collaborations & Revenue
+        </Typography>
+        <ResponsiveContainer width="100%" height="90%">
+          <BarChart
+            data={data}
+            margin={{ top: 30, right: 20, left: 0, bottom: 20 }}
+          >
+            <XAxis
+              dataKey="month"
+              tickFormatter={(m) =>
+                new Date(m + "-01").toLocaleString("default", { month: "short" })
+              }
+            />
+            <YAxis domain={[0, 'auto']} />
+            <Tooltip formatter={(value, name) =>
+              name === "revenue" ? formatINR(value) : value
+            } />
             <Legend />
-            <Bar dataKey="collaborations" fill="#8884d8" />
-            <Bar dataKey="revenue" fill="#82ca9d" />
+            <Bar dataKey="collaborations" fill="#8884d8">
+              <LabelList dataKey="collaborations" position="top" offset={10} />
+            </Bar>
+            <Bar dataKey="revenue" fill="#82ca9d">
+              <LabelList
+                dataKey="revenue"
+                position="top"
+                offset={10}
+                formatter={formatINR}
+              />
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
