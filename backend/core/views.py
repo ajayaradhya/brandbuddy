@@ -1,31 +1,21 @@
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, filters
+from datetime import date, datetime
 
 from core.filters import CollaborationFilter
-from drf_yasg.utils import swagger_auto_schema
-from rest_framework.decorators import action
-from rest_framework.response import Response
+from core.models import Brand, Collaboration
+from django.db.models import Count, ExpressionWrapper, F, FloatField, Sum
+from django.db.models.functions import Coalesce, TruncMonth
 from django.utils import timezone
-from datetime import date
+from django.utils.timezone import localtime, now
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import filters, viewsets
+from rest_framework.decorators import action, api_view
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from .models import Brand, Collaboration
 from .serializers import BrandSerializer, CollaborationSerializer
-
-from django.utils.timezone import now
-from django.db.models import Count, Sum
-from django.db.models.functions import TruncMonth
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-
-from core.models import Brand, Collaboration
-from django.db.models import Sum, Count, F, FloatField, ExpressionWrapper
-from django.db.models.functions import Coalesce
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from django.utils.timezone import localtime
-from .models import Collaboration
-from datetime import datetime
 
 
 class BrandViewSet(viewsets.ModelViewSet):
