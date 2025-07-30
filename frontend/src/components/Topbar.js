@@ -1,19 +1,31 @@
-import { AppBar, Toolbar, Typography, Box, Avatar, IconButton } from '@mui/material';
-import { useLocation } from 'react-router-dom';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Box,
+  Avatar,
+  IconButton,
+  useMediaQuery,
+} from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import MenuIcon from '@mui/icons-material/Menu';
 import NotificationsIcon from '@mui/icons-material/Notifications';
-// import logo from './logo.svg'; // Add a logo or icon if available
+import { useLocation } from 'react-router-dom';
 
 const routeToTitle = {
   '/': 'Dashboard',
   '/brands': 'Brands',
   '/campaigns': 'Campaigns',
-  '/calendar': 'Collaboration Calendar',
+  '/calendar': 'Calendar',
   '/settings': 'Settings',
 };
 
-const TopBar = () => {
+const TopBar = ({ setMobileOpen }) => {
   const location = useLocation();
   const pageTitle = routeToTitle[location.pathname] || 'BrandBuddy';
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
     <AppBar
@@ -28,9 +40,18 @@ const TopBar = () => {
         zIndex: 1201,
       }}
     >
-      <Toolbar sx={{ justifyContent: 'space-between', px: 3 }}>
+      <Toolbar sx={{ justifyContent: 'space-between', px: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {/* <img src={logo} alt="Logo" style={{ width: 32, height: 32 }} /> */}
+          {isMobile && (
+            <IconButton
+              edge="start"
+              color="inherit"
+              onClick={() => setMobileOpen(true)}
+              sx={{ mr: 1 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
           <Typography
             variant="h6"
             sx={{ fontWeight: 600, letterSpacing: 0.5 }}
