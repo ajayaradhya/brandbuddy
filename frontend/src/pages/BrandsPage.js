@@ -1,38 +1,41 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Box,
+  Grid,
   Card,
+  CardHeader,
   CardContent,
   Typography,
-  Grid,
+  Avatar,
   IconButton,
+  Tooltip,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
   Button,
-  Tooltip,
-  Chip,
+  TextField,
+  CircularProgress,
 } from '@mui/material';
-import axios from 'axios';
 import EditIcon from '@mui/icons-material/Edit';
-import PublicIcon from '@mui/icons-material/Public';
-import InstagramIcon from '@mui/icons-material/Instagram';
-import PhoneIcon from '@mui/icons-material/Phone';
-import EmailIcon from '@mui/icons-material/Email';
+import axios from 'axios';
 
 const BrandsPage = () => {
   const [brands, setBrands] = useState([]);
-  const [editingBrand, setEditingBrand] = useState(null);
-  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedBrand, setSelectedBrand] = useState(null);
+  const [logoFile, setLogoFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   const fetchBrands = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/brands`);
-      setBrands(res.data);
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/brands`);
+      setBrands(response.data);
     } catch (err) {
-      console.error('Error fetching brands:', err);
+      console.error('Failed to fetch brands:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -40,112 +43,175 @@ const BrandsPage = () => {
     fetchBrands();
   }, []);
 
-  const handleEdit = (brand) => {
-    setEditingBrand({ ...brand });
-    setOpen(true);
+  const handleEditClick = (brand) => {
+    setSelectedBrand({ ...brand });
+    setPreviewUrl(brand.logo || null);
+    setEditDialogOpen(true);
   };
 
-  const handleClose = () => {
-    setOpen(false);
-    setEditingBrand(null);
+  const handleDialogClose = () => {
+    setSelectedBrand(null);
+    setLogoFile(null);
+    setPreviewUrl(null);
+    setEditDialogOpen(false);
   };
 
-  const handleSave = async () => {
-    try {
-      await axios.put(`${process.env.REACT_APP_API_BASE_URL}/api/brands/${editingBrand.id}/`, editingBrand);
-      fetchBrands();
-      handleClose();
-    } catch (err) {
-      console.error('Error saving brand:', err);
+  const handleInputChange = (e) => {
+    setSelectedBrand({
+      ...selectedBrand,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleLogoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setLogoFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
     }
   };
 
-  const handleChange = (e) => {
-    setEditingBrand({ ...editingBrand, [e.target.name]: e.target.value });
+  const handleSave = async () => {
+    if (!selectedBrand) return;
+    setSaving(true);
+    try {
+      const formData = new FormData();
+      Object.entries(selectedBrand).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) {
+          formData.append(key, value);
+        }
+      });
+
+      if (logoFile) {
+        formData.append('logo', logoFile);
+      }
+
+      const res = await axios.put(
+        `${process.env.REACT_APP_API_BASE_URL}/api/brands/${selectedBrand.id}/`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+
+      const updated = brands.map((b) => (b.id === res.data.id ? res.data : b));
+      setBrands(updated);
+      handleDialogClose();
+    } catch (err) {
+      console.error('Failed to save brand:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const getInstagramLink = (handle) => {
+    if (!handle) return null;
+    const username = handle.startsWith('@') ? handle.substring(1) : handle;
+    return `https://www.instagram.com/${username}`;
   };
 
   return (
-    <Box p={3}>
-      {/* <Typography variant="h5" fontWeight="bold" mb={3}>
-        Partnered Brands
-      </Typography> */}
+    <div style={{ padding: '24px' }}>
+      <Typography variant="h4" gutterBottom fontWeight={600}>
+        Brand Partners
+      </Typography>
 
-      <Grid container spacing={3}>
-        {brands.map((brand) => (
-          <Grid item xs={12} sm={6} md={4} key={brand.id}>
-            <Card elevation={3}>
-              <CardContent>
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                  <Typography variant="h6">{brand.name}</Typography>
-                  <Tooltip title="Edit Brand">
-                    <IconButton size="small" onClick={() => handleEdit(brand)}>
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-
-                {brand.category && (
-                  <Chip label={brand.category} size="small" sx={{ mb: 1 }} color="black" />
-                )}
-
-                <Box display="flex" flexDirection="column" gap={1} mt={1}>
-                  {brand.email && (
-                    <Typography variant="body2">
-                      <EmailIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} />
-                      {brand.email}
-                    </Typography>
-                  )}
-                  {brand.phone && (
-                    <Typography variant="body2">
-                      <PhoneIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} />
-                      {brand.phone}
-                    </Typography>
-                  )}
-                  {brand.website && (
-                    <Typography variant="body2">
-                      <PublicIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} />
-                      <a href={brand.website} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
-                        {brand.website}
-                      </a>
-                    </Typography>
-                  )}
+      {loading ? (
+        <CircularProgress />
+      ) : (
+        <Grid container spacing={3}>
+          {brands.map((brand) => (
+            <Grid item xs={12} sm={6} md={4} key={brand.id}>
+              <Card elevation={3}>
+                <CardHeader
+                  avatar={
+                    brand.logo ? (
+                      <Avatar src={brand.logo} />
+                    ) : (
+                      <Avatar>{brand.name.charAt(0)}</Avatar>
+                    )
+                  }
+                  action={
+                    <Tooltip title="Edit">
+                      <IconButton onClick={() => handleEditClick(brand)}>
+                        <EditIcon />
+                      </IconButton>
+                    </Tooltip>
+                  }
+                  title={brand.name}
+                  subheader={brand.category || 'Uncategorized'}
+                />
+                <CardContent>
                   {brand.instagram_handle && (
-                    <Typography variant="body2">
-                      <InstagramIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} />
-                      
-                      <a href={brand.instagram_handle} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
+                    <Typography>
+                      <b>Instagram:</b>{' '}
+                      <a
+                        href={getInstagramLink(brand.instagram_handle)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         {brand.instagram_handle}
                       </a>
                     </Typography>
                   )}
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+                  {brand.website && (
+                    <Typography>
+                      <b>Website:</b>{' '}
+                      <a href={brand.website} target="_blank" rel="noopener noreferrer">
+                        {brand.website}
+                      </a>
+                    </Typography>
+                  )}
+                  {brand.email && (
+                    <Typography>
+                      <b>Email:</b> {brand.email}
+                    </Typography>
+                  )}
+                  {brand.phone && (
+                    <Typography>
+                      <b>Phone:</b> {brand.phone}
+                    </Typography>
+                  )}
+                  <Typography variant="caption" color="textSecondary">
+                    Created on {new Date(brand.created_at).toLocaleDateString()}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
 
-      {/* Edit Brand Modal */}
-      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-        <DialogTitle>Edit Brand Info</DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          {editingBrand && (
-            <Box display="flex" flexDirection="column" gap={2}>
-              <TextField label="Name" name="name" fullWidth value={editingBrand.name} onChange={handleChange} />
-              <TextField label="Email" name="email" fullWidth value={editingBrand.email || ''} onChange={handleChange} />
-              <TextField label="Phone" name="phone" fullWidth value={editingBrand.phone || ''} onChange={handleChange} />
-              <TextField label="Website" name="website" fullWidth value={editingBrand.website || ''} onChange={handleChange} />
-              <TextField label="Instagram" name="instagram_handle" fullWidth value={editingBrand.instagram_handle || ''} onChange={handleChange} />
-              <TextField label="Category" name="category" fullWidth value={editingBrand.category || ''} onChange={handleChange} />
-            </Box>
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onClose={handleDialogClose} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Brand</DialogTitle>
+        <DialogContent>
+          {selectedBrand && (
+            <>
+              <TextField fullWidth margin="dense" label="Name" name="name" value={selectedBrand.name} onChange={handleInputChange} />
+              <TextField fullWidth margin="dense" label="Website" name="website" value={selectedBrand.website || ''} onChange={handleInputChange} />
+              <TextField fullWidth margin="dense" label="Instagram Handle" name="instagram_handle" value={selectedBrand.instagram_handle || ''} onChange={handleInputChange} />
+              <TextField fullWidth margin="dense" label="Email" name="email" value={selectedBrand.email || ''} onChange={handleInputChange} />
+              <TextField fullWidth margin="dense" label="Phone" name="phone" value={selectedBrand.phone || ''} onChange={handleInputChange} />
+              <TextField fullWidth margin="dense" label="Category" name="category" value={selectedBrand.category || ''} onChange={handleInputChange} />
+              
+              <div style={{ marginTop: '1rem' }}>
+                <Typography variant="subtitle2">Logo Upload</Typography>
+                <input type="file" accept="image/*" onChange={handleLogoChange} style={{ marginTop: '8px' }} />
+                {previewUrl && (
+                  <div style={{ marginTop: '10px' }}>
+                    <Typography variant="caption">Preview:</Typography>
+                    <Avatar src={previewUrl} alt="Preview" sx={{ width: 60, height: 60, mt: 1 }} />
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose} variant="outlined">Cancel</Button>
-          <Button onClick={handleSave} variant="contained" color="primary">Save</Button>
+          <Button onClick={handleDialogClose} disabled={saving}>Cancel</Button>
+          <Button onClick={handleSave} variant="contained" disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </div>
   );
 };
 
