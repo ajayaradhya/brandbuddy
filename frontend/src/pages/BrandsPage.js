@@ -15,8 +15,10 @@ import {
   Button,
   TextField,
   CircularProgress,
+  InputAdornment,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
+import SearchIcon from '@mui/icons-material/Search';
 import axios from 'axios';
 
 const BrandsPage = () => {
@@ -27,10 +29,13 @@ const BrandsPage = () => {
   const [logoFile, setLogoFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchBrands = async () => {
+  const fetchBrands = async (query = '') => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/brands`);
+      const response = await axios.get(
+        `${process.env.REACT_APP_API_BASE_URL}/api/brands?search=${query}`
+      );
       setBrands(response.data);
     } catch (err) {
       console.error('Failed to fetch brands:', err);
@@ -108,19 +113,51 @@ const BrandsPage = () => {
     return `https://www.instagram.com/${username}`;
   };
 
+  const handleSearchChange = async (e) => {
+    const query = e.target.value;
+    setSearchTerm(query);
+    fetchBrands(query);
+  };
+
   return (
     <div style={{ padding: '24px' }}>
-      <Typography variant="h4" gutterBottom fontWeight={600}>
+      {/* <Typography variant="h4" gutterBottom fontWeight={600}>
         Brand Partners
-      </Typography>
+      </Typography> */}
+
+      <TextField
+        placeholder="Search Brands..."
+        variant="outlined"
+        value={searchTerm}
+        onChange={handleSearchChange}
+        sx={{ mb: 3 }}
+        slots={{ inputAdornment: InputAdornment }}
+        slotProps={{
+            inputAdornment: {
+            position: 'start',
+            children: <SearchIcon />,
+            },
+        }}
+        />
 
       {loading ? (
         <CircularProgress />
+      ) : brands.length === 0 ? (
+        <Typography variant="h6" color="text.secondary">
+          No brands found.
+        </Typography>
       ) : (
         <Grid container spacing={3}>
           {brands.map((brand) => (
             <Grid item xs={12} sm={6} md={4} key={brand.id}>
-              <Card elevation={3}>
+              <Card
+                elevation={4}
+                sx={{
+                  transition: 'transform 0.2s ease-in-out',
+                  '&:hover': { transform: 'scale(1.02)' },
+                  borderRadius: 2,
+                }}
+              >
                 <CardHeader
                   avatar={
                     brand.logo ? (
@@ -136,7 +173,11 @@ const BrandsPage = () => {
                       </IconButton>
                     </Tooltip>
                   }
-                  title={brand.name}
+                  title={
+                    <Typography fontWeight={600} variant="h6">
+                      {brand.name}
+                    </Typography>
+                  }
                   subheader={brand.category || 'Uncategorized'}
                 />
                 <CardContent>
@@ -155,7 +196,11 @@ const BrandsPage = () => {
                   {brand.website && (
                     <Typography>
                       <b>Website:</b>{' '}
-                      <a href={brand.website} target="_blank" rel="noopener noreferrer">
+                      <a
+                        href={brand.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         {brand.website}
                       </a>
                     </Typography>
@@ -180,7 +225,6 @@ const BrandsPage = () => {
         </Grid>
       )}
 
-      {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onClose={handleDialogClose} maxWidth="sm" fullWidth>
         <DialogTitle>Edit Brand</DialogTitle>
         <DialogContent>
