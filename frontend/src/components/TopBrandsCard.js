@@ -44,12 +44,11 @@ function BrandProgressBar({ totalPaid, totalBarter }) {
 
 export default function TopBrandsCard({ data }) {
   return (
-    <Card sx={{ width: '100%', height: '100%' }}>
-      <CardContent>
+    <Card sx={{ flexGrow: 1, width: "100%", height: 400 }}>
+      <CardContent sx={{ width:"100%", height: "100%" }}>
         <Typography variant="h6" gutterBottom>
           Top Performing Brands (by Total Value)
         </Typography>
-
         {data.length === 0 ? (
           <Typography variant="body2" color="textSecondary">No data available</Typography>
         ) : (
