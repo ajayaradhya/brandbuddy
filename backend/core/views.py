@@ -18,6 +18,14 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from core.models import Brand, Collaboration
+from django.db.models import Sum, Count, F, FloatField, ExpressionWrapper
+from django.db.models.functions import Coalesce
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.utils.timezone import localtime
+from .models import Collaboration
+from datetime import datetime
 
 
 class BrandViewSet(viewsets.ModelViewSet):
@@ -66,6 +74,45 @@ class CollaborationViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+class CalendarViewAPI(APIView):
+    def get(self, request):
+        events = []
+        collabs = Collaboration.objects.select_related('brand').all()
+
+        def format_date(d):
+            if isinstance(d, datetime):
+                return localtime(d).date()
+            return d  # assume already a date
+
+        for c in collabs:
+            if c.start_date:
+                events.append({
+                    "title": f"{c.brand.name} - Collab Starts",
+                    "date": format_date(c.start_date),
+                    "type": "collaboration_start",
+                })
+            if c.end_date:
+                events.append({
+                    "title": f"{c.brand.name} - Collab Ends",
+                    "date": format_date(c.end_date),
+                    "type": "collaboration_end",
+                })
+            if c.followup_date:
+                events.append({
+                    "title": f"{c.brand.name} - Follow Up",
+                    "date": format_date(c.followup_date),
+                    "type": "followup",
+                })
+            if c.delivery_deadline:
+                events.append({
+                    "title": f"{c.brand.name} - Delivery Deadline",
+                    "date": format_date(c.delivery_deadline),
+                    "type": "delivery_deadline",
+                })
+
+        return Response({"events": events})
+
+
 @api_view(['GET'])
 def dashboard_view(request):
     today = now().date()
@@ -110,6 +157,33 @@ def dashboard_view(request):
     # Total barter value
     total_barter_value = Collaboration.objects.filter(collab_type='barter').aggregate(Sum('barter_value'))['barter_value__sum'] or 0
 
+    # Top performing brands by total paid + barter value
+    top_brands_qs = (
+        Collaboration.objects
+        .values('brand__name')  # Group by brand name
+        .annotate(
+            total_collabs=Count('id'),
+            total_paid=Sum('amount'),
+            total_barter=Sum('barter_value'),
+            total_value=ExpressionWrapper(
+                Coalesce(Sum('amount'), 0) + Coalesce(Sum('barter_value'), 0),
+                output_field=FloatField()
+            )
+        )
+        .order_by('-total_value')[:3]
+    )
+
+    top_brands = [
+        {
+            "name": brand["brand__name"],
+            "total_collabs": brand["total_collabs"],
+            "total_paid": round(brand["total_paid"] or 0, 2),
+            "total_barter": round(brand["total_barter"] or 0, 2),
+            "total_value": round(brand["total_value"] or 0, 2),
+        }
+        for brand in top_brands_qs
+    ]
+
     return Response({
         'total_brands': total_brands,
         'total_collabs': total_collabs,
@@ -124,4 +198,5 @@ def dashboard_view(request):
         'upcoming_deliveries': upcoming_deliveries,
         'total_paid_amount': total_paid_amount,
         'total_barter_value': total_barter_value,
+        "top_brands": top_brands,
     })

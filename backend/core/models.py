@@ -43,17 +43,24 @@ class Collaboration(models.Model):
     platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES)
     collab_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='contacted')
-    
+
     pitch_date = models.DateField(blank=True, null=True)
     followup_date = models.DateField(blank=True, null=True)
     delivery_deadline = models.DateField(blank=True, null=True)
-    
+
+    # Calendar-specific fields
+    start_date = models.DateField(blank=True, null=True)
+    end_date = models.DateField(blank=True, null=True)
+    payment_due_date = models.DateField(blank=True, null=True)
+    payment_received_date = models.DateField(blank=True, null=True)
+    reminder_date = models.DateField(blank=True, null=True)
+
     deliverables = models.TextField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
-    amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # if paid
+    amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
-    barter_product = models.CharField(max_length=255, blank=True, null=True)  # if barter collaboration
-    barter_value = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)  # estimated value of barter product
+    barter_product = models.CharField(max_length=255, blank=True, null=True)
+    barter_value = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -62,6 +69,4 @@ class Collaboration(models.Model):
         campaign = self.campaign_name or "No Campaign"
         collab_type = self.collab_type.capitalize()
         status = self.status.replace("_", " ").title()
-
         return f"{brand} | {campaign} | {collab_type} [{status}]"
-
