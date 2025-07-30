@@ -1,4 +1,4 @@
-import { Box, Grid, Typography, CircularProgress } from "@mui/material";
+import { Box, Grid, CircularProgress } from "@mui/material";
 import StatCard from "./StatCard";
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -35,9 +35,6 @@ const DashboardContent = () => {
 
   return (
     <Box p={3} width="100%">
-      <Typography variant="h5" gutterBottom>
-        Dashboard
-      </Typography>
 
       {/* Top Stats */}
       <Grid container spacing={2} mb={3}>
