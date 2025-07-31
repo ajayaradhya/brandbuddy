@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Box, CssBaseline, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useState } from 'react';
+import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 
 import DashboardContent from './components/DashboardContent';
 import BrandsPage from './pages/BrandsPage';
-import CampaignsPage from './pages/CampaignsPage';
 import CalendarView from './pages/CalendarView';
+import CampaignsPage from './pages/CampaignsPage';
 import SettingsPage from './pages/SettingsPage';
+
+import ProtectedRoute from './components/ProtectedRoute';
+import LoginPage from './pages/LoginPage';
 
 function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -37,11 +40,12 @@ function App() {
         >
           <TopBar setMobileOpen={setMobileOpen} />
           <Routes>
-            <Route path="/" element={<DashboardContent />} />
-            <Route path="/brands" element={<BrandsPage />} />
-            <Route path="/campaigns" element={<CampaignsPage />} />
-            <Route path="/calendar" element={<CalendarView />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/" element={<ProtectedRoute><DashboardContent /></ProtectedRoute>} />
+            <Route path="/brands" element={<ProtectedRoute><BrandsPage /></ProtectedRoute>} />
+            <Route path="/campaigns" element={<ProtectedRoute><CampaignsPage /></ProtectedRoute>} />
+            <Route path="/calendar" element={<ProtectedRoute><CalendarView /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           </Routes>
         </Box>
       </Box>

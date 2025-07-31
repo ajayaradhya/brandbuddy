@@ -1,8 +1,10 @@
 from datetime import date, datetime
 
-from core.pagination import CollaborationPagination
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from core.filters import CollaborationFilter
 from core.models import Brand, Collaboration
+from core.pagination import CollaborationPagination
+from dj_rest_auth.registration.views import SocialLoginView
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Sum
 from django.db.models.functions import Coalesce, TruncMonth
 from django.utils import timezone
@@ -114,6 +116,11 @@ class CalendarViewAPI(APIView):
                 })
 
         return Response({"events": events})
+
+
+class GoogleLogin(SocialLoginView):
+    adapter_class = GoogleOAuth2Adapter
+
 
 
 @api_view(['GET'])

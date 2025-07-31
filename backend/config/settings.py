@@ -53,6 +53,10 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
 ]
 
+REST_AUTH_REGISTER_SERIALIZERS = {
+    'REGISTER_SERIALIZER': 'dj_rest_auth.registration.serializers.RegisterSerializer',
+}
+
 SITE_ID = 1
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
@@ -64,8 +68,14 @@ AUTHENTICATION_BACKENDS = (
 
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
-        'SCOPE': ['profile', 'email'],
-        'AUTH_PARAMS': {'access_type': 'online'},
+        'SCOPE': [
+            'profile',
+            'email',
+            'openid',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
     }
 }
 
@@ -77,6 +87,19 @@ ACCOUNT_EMAIL_REQUIRED = True
 # These control signup/login fields
 ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 ACCOUNT_SIGNUP_FIELDS = ['username', 'email']
+
+# Redirect to frontend with token after login
+# Ensure session is stored for Google flow
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+REST_USE_JWT = True
+
+LOGIN_REDIRECT_URL = "http://localhost:3000/login"
+LOGOUT_REDIRECT_URL = "http://localhost:3000/login"
+ACCOUNT_LOGOUT_REDIRECT_URL = "http://localhost:3000/login"
+
+# dj-rest-auth + allauth redirect
+SOCIALACCOUNT_ADAPTER = 'core.adapters.CustomSocialAccountAdapter'
 
 
 MIDDLEWARE = [
@@ -150,7 +173,10 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.SearchFilter',
         'rest_framework.filters.OrderingFilter',
-    ]
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
+    )
 }
 
 
@@ -182,3 +208,18 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True  # optional, but safer to be explicit
 CORS_ALLOW_CREDENTIALS = True
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
+}
