@@ -12,6 +12,12 @@ import {
   DialogActions,
   Button,
   Divider,
+  Drawer,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  Checkbox,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -46,20 +52,15 @@ const TopNavigationBar = ({ setMobileOpen }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([
-    // Example notifications
-    { id: 1, text: 'Test Notification 1', read: true, time: '2h ago' },
-    { id: 2, text: 'Test Notification 1', read: true, time: '1d ago' },
+    { id: 1, text: 'New collaboration request', read: true, time: '2h ago' },
+    { id: 2, text: 'Campaign delivered', read: true, time: '1d ago' },
+    { id: 3, text: 'Payment received', read: true, time: '3d ago' },
   ]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const handleAvatarClick = () => {
-    setDialogOpen(true);
-  };
-
-  const handleDialogClose = () => {
-    setDialogOpen(false);
-  };
+  const handleAvatarClick = () => setDialogOpen(true);
+  const handleDialogClose = () => setDialogOpen(false);
 
   const handleLogout = () => {
     localStorage.removeItem('access_token');
@@ -67,6 +68,20 @@ const TopNavigationBar = ({ setMobileOpen }) => {
     localStorage.removeItem('user');
     setDialogOpen(false);
     navigate('/login');
+  };
+
+  // Drawer notification logic
+  const handleNotifDrawerOpen = () => setNotifOpen(true);
+  const handleNotifDrawerClose = () => setNotifOpen(false);
+
+  const handleMarkAsRead = (id) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+  };
+
+  const handleMarkAllAsRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
   return (
@@ -107,7 +122,7 @@ const TopNavigationBar = ({ setMobileOpen }) => {
             <IconButton
               size="small"
               sx={{ color: 'inherit' }}
-              onClick={() => setNotifOpen(true)}
+              onClick={handleNotifDrawerOpen}
             >
               <Badge
                 color="error"
@@ -138,6 +153,7 @@ const TopNavigationBar = ({ setMobileOpen }) => {
         </Toolbar>
       </AppBar>
 
+      {/* User Dialog (unchanged) */}
       <Dialog
         open={dialogOpen}
         onClose={handleDialogClose}
@@ -185,38 +201,78 @@ const TopNavigationBar = ({ setMobileOpen }) => {
         </DialogActions>
       </Dialog>
 
-      <Dialog
+      {/* Notifications Drawer */}
+      <Drawer
+        anchor="right"
         open={notifOpen}
-        onClose={() => setNotifOpen(false)}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 3, p: 2, bgcolor: '#fafbfc' } }}
+        onClose={handleNotifDrawerClose}
+        PaperProps={{
+          sx: { width: 350, bgcolor: '#fafbfc', borderRadius: '0 0 0 16px' },
+        }}
       >
-        <DialogTitle>Notifications</DialogTitle>
-        <Divider sx={{ mb: 1 }} />
-        <DialogContent>
-          {notifications.length === 0 ? (
-            <Typography color="text.secondary">No notifications</Typography>
-          ) : (
-            notifications.map((n) => (
-              <Box key={n.id} sx={{ mb: 2 }}>
-                <Typography
-                  variant="body2"
-                  color={n.read ? 'text.secondary' : 'text.primary'}
+        <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <Typography variant="h6" fontWeight={600} gutterBottom>
+            Notifications
+          </Typography>
+          <Divider sx={{ mb: 2 }} />
+          <List sx={{ flexGrow: 1 }}>
+            {notifications.length === 0 ? (
+              <Typography color="text.secondary" textAlign="center" py={2}>
+                No notifications
+              </Typography>
+            ) : (
+              notifications.map((n) => (
+                <ListItem
+                  key={n.id}
+                  sx={{ py: 1, px: 2, borderRadius: 2, mb: 1, bgcolor: n.read ? 'transparent' : '#e8f0fe' }}
                 >
-                  {n.text}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {n.time}
-                </Typography>
-              </Box>
-            ))
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setNotifOpen(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
+                  <ListItemText
+                    primary={
+                      <Typography
+                        variant="body2"
+                        color={n.read ? 'text.secondary' : 'text.primary'}
+                        sx={{ fontWeight: n.read ? 400 : 500 }}
+                      >
+                        {n.text}
+                      </Typography>
+                    }
+                    secondary={
+                      <Typography variant="caption" color="text.secondary">
+                        {n.time}
+                      </Typography>
+                    }
+                  />
+                  <ListItemSecondaryAction>
+                    <IconButton
+                      edge="end"
+                      size="small"
+                      onClick={() => handleMarkAsRead(n.id)}
+                      sx={{ visibility: n.read ? 'hidden' : 'visible' }}
+                    >
+                      <Checkbox
+                        checked={n.read}
+                        color="primary"
+                        size="small"
+                        sx={{ p: 0 }}
+                      />
+                    </IconButton>
+                  </ListItemSecondaryAction>
+                </ListItem>
+              ))
+            )}
+          </List>
+          <Button
+            onClick={handleMarkAllAsRead}
+            disabled={unreadCount === 0}
+            variant="outlined"
+            color="primary"
+            size="small"
+            sx={{ borderRadius: 2, fontWeight: 600, mt: 1 }}
+          >
+            Mark all as read
+          </Button>
+        </Box>
+      </Drawer>
     </>
   );
 };

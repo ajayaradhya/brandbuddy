@@ -57,10 +57,10 @@ const Sidebar = ({ mobileOpen, setMobileOpen, isMobile }) => {
                 mb: 0.5,
                 mx: 1,
                 borderRadius: 1,
-                color: isActive ? '#000' : '#555',
+                color: isActive ? '#000000' : '#3a3a3aff',
                 backgroundColor: isActive ? '#f3e5f5' : 'transparent',
-                '&:hover': { backgroundColor: '#f9f9f9' },
-                '&.active': { backgroundColor: '#f3e5f5' },
+                '&:hover': { backgroundColor: '#eeeeeeff' },
+                '&.active': { backgroundColor: '#ddddddff' },
               }}
               className={isActive ? 'active' : ''}
             >
