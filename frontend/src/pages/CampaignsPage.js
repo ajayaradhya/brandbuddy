@@ -69,7 +69,7 @@ export default function CampaignsPage() {
   };
 
   const handleDelete = async (id) => {
-    await axios.delete(`${process.env.REACT_APP_API_BASE_URL}/collaborations/${id}/`);
+    await axios.delete(`${process.env.REACT_APP_API_BASE_URL}/api/collaborations/${id}/`);
     fetchCampaigns();
     setConfirmDelete({ open: false, id: null });
   };

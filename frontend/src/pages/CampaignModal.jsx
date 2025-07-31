@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
-  TextField, Button, MenuItem, Grid, Select, InputLabel, FormControl
+  TextField, Button, MenuItem, Grid, Select,
+  InputLabel, FormControl
 } from '@mui/material';
 import axios from 'axios';
 
@@ -29,16 +30,34 @@ export default function CampaignModal({ open, onClose, campaign, onSuccess }) {
   const [brands, setBrands] = useState([]);
 
   useEffect(() => {
-    if (campaign) {
-      setForm({ ...campaign, brand: campaign.brand?.id || '' });
-    } else {
-      setForm(prev => ({ ...prev, status: 'contacted', collab_type: 'barter', platform: 'instagram' }));
-    }
-  }, [campaign]);
+    axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/brands/`)
+      .then(res => setBrands(res.data));
+  }, []);
 
   useEffect(() => {
-    axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/brands/`).then(res => setBrands(res.data));
-  }, []);
+    if (campaign) {
+      setForm({
+        ...campaign,
+        brand_id: campaign.brand?.id || '',
+        delivery_deadline: campaign.delivery_deadline || '',
+        barter_product: campaign.barter_product || '',
+        barter_value: campaign.barter_value || '',
+        notes: campaign.notes || '',
+      });
+    } else {
+      setForm({
+        campaign_name: '',
+        status: 'contacted',
+        collab_type: 'barter',
+        platform: 'instagram',
+        delivery_deadline: '',
+        barter_product: '',
+        barter_value: '',
+        brand_id: '',
+        notes: '',
+      });
+    }
+  }, [campaign]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -46,13 +65,22 @@ export default function CampaignModal({ open, onClose, campaign, onSuccess }) {
   };
 
   const handleSubmit = async () => {
-    const payload = { ...form };
-    if (campaign) {
-      await axios.put(`${process.env.REACT_APP_API_BASE_URL}/api/collaborations/${campaign.id}/`, payload);
-    } else {
-      await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/collaborations/`, payload);
+    const payload = {
+      ...form,
+      brand_id: form.brand_id,
+    };
+    try {
+      if (campaign?.id) {
+        await axios.put(`${process.env.REACT_APP_API_BASE_URL}/api/collaborations/${campaign.id}/`, payload);
+      } else {
+        await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/collaborations/`, payload);
+      }
+      onSuccess();
+      onClose();
+    } catch (err) {
+      console.error('Save error:', err.response?.data || err.message);
+      alert('Failed to save. Check the form and try again.');
     }
-    onSuccess();
   };
 
   return (
@@ -69,6 +97,7 @@ export default function CampaignModal({ open, onClose, campaign, onSuccess }) {
               fullWidth
             />
           </Grid>
+
           <Grid item xs={12}>
             <FormControl fullWidth>
               <InputLabel>Status</InputLabel>
@@ -79,6 +108,7 @@ export default function CampaignModal({ open, onClose, campaign, onSuccess }) {
               </Select>
             </FormControl>
           </Grid>
+
           <Grid item xs={6}>
             <FormControl fullWidth>
               <InputLabel>Type</InputLabel>
@@ -89,6 +119,7 @@ export default function CampaignModal({ open, onClose, campaign, onSuccess }) {
               </Select>
             </FormControl>
           </Grid>
+
           <Grid item xs={6}>
             <FormControl fullWidth>
               <InputLabel>Platform</InputLabel>
@@ -99,6 +130,7 @@ export default function CampaignModal({ open, onClose, campaign, onSuccess }) {
               </Select>
             </FormControl>
           </Grid>
+
           <Grid item xs={12}>
             <TextField
               label="Delivery Deadline"
@@ -110,13 +142,14 @@ export default function CampaignModal({ open, onClose, campaign, onSuccess }) {
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
+
           {form.collab_type === 'barter' && (
             <>
               <Grid item xs={12}>
                 <TextField
                   label="Barter Product"
                   name="barter_product"
-                  value={form.barter_product || ''}
+                  value={form.barter_product}
                   onChange={handleChange}
                   fullWidth
                 />
@@ -126,28 +159,35 @@ export default function CampaignModal({ open, onClose, campaign, onSuccess }) {
                   label="Barter Value"
                   name="barter_value"
                   type="number"
-                  value={form.barter_value || ''}
+                  value={form.barter_value}
                   onChange={handleChange}
                   fullWidth
                 />
               </Grid>
             </>
           )}
+
           <Grid item xs={12}>
             <FormControl fullWidth>
               <InputLabel>Brand</InputLabel>
-              <Select name="brand" value={form.brand} label="Brand" onChange={handleChange}>
+              <Select
+                name="brand_id"
+                value={form.brand_id}
+                label="Brand"
+                onChange={handleChange}
+              >
                 {brands.map(b => (
                   <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>
                 ))}
               </Select>
             </FormControl>
           </Grid>
+
           <Grid item xs={12}>
             <TextField
               label="Notes"
               name="notes"
-              value={form.notes || ''}
+              value={form.notes}
               onChange={handleChange}
               fullWidth
               multiline
@@ -156,6 +196,7 @@ export default function CampaignModal({ open, onClose, campaign, onSuccess }) {
           </Grid>
         </Grid>
       </DialogContent>
+
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
         <Button onClick={handleSubmit} variant="contained">Save</Button>
