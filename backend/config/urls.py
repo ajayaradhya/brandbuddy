@@ -19,6 +19,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
+from django.views.decorators.cache import never_cache
+from django.views.generic import TemplateView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
@@ -56,6 +58,9 @@ urlpatterns = [
     path('dj-rest-auth/registration/', include('dj_rest_auth.registration.urls')),
     path('dj-rest-auth/google/', GoogleIdTokenLogin.as_view(), name='google-id-token-login'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    path("", never_cache(TemplateView.as_view(template_name="index.html"))),
+    path("<path:path>", never_cache(TemplateView.as_view(template_name="index.html"))),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

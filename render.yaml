@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: brandbuddy
+    env: python
+    plan: free
+    buildCommand: |
+      cd backend
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput
+      cd ../frontend
+      npm install
+      npm run build
+    startCommand: gunicorn config.wsgi:application --chdir backend
+    envVars:
+      - fromDotEnv: true
