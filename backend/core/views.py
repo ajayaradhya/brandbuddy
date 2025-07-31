@@ -74,25 +74,25 @@ class CollaborationViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
-    @swagger_auto_schema(
-        operation_description="Get collaborations with overdue follow-ups (followup_date < today and not delivered/paid)."
-    )
-    @action(detail=False, methods=["get"], url_path="overdue-followups")
-    def overdue_followups(self, request):
-        today = date.today()
-        qs = self.get_queryset().filter(
-            followup_date__lt=today
-        ).exclude(
-            status__in=["delivered", "paid"]
-        )
+    # @swagger_auto_schema(
+    #     operation_description="Get collaborations with overdue follow-ups (followup_date < today and not delivered/paid)."
+    # )
+    # @action(detail=False, methods=["get"], url_path="overdue-followups")
+    # def overdue_followups(self, request):
+    #     today = date.today()
+    #     qs = self.get_queryset().filter(
+    #         followup_date__lt=today
+    #     ).exclude(
+    #         status__in=["delivered", "paid"]
+    #     )
 
-        page = self.paginate_queryset(qs)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+    #     page = self.paginate_queryset(qs)
+    #     if page is not None:
+    #         serializer = self.get_serializer(page, many=True)
+    #         return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(qs, many=True)
-        return Response(serializer.data)
+    #     serializer = self.get_serializer(qs, many=True)
+    #     return Response(serializer.data)
 
 
 class CalendarViewAPI(APIView):
@@ -183,7 +183,7 @@ def dashboard_view(request):
     user = request.user
 
     # Total counts
-    total_brands = Brand.objects.filter(user=user).count()
+    total_brands = Brand.objects.filter().count()
     total_collabs = Collaboration.objects.filter(user=user).count()
 
     # Collabs by status
@@ -203,20 +203,20 @@ def dashboard_view(request):
     )
 
     # Overdue followups
-    overdue_followups = Collaboration.objects.filter(
-        user=user,
-        followup_date__lt=today
-    ).exclude(
-        status__in=["delivered", "paid"]
-    ).count()
+    # overdue_followups = Collaboration.objects.filter(
+    #     user=user,
+    #     followup_date__lt=today
+    # ).exclude(
+    #     status__in=["delivered", "paid"]
+    # ).count()
 
-    # upcoming deliveries
-    upcoming_deliveries = Collaboration.objects.filter(
-        user=user,
-        delivery_deadline__gte=today
-    ).exclude(
-        status__in=["delivered", "paid"]
-    ).count()
+    # # upcoming deliveries
+    # upcoming_deliveries = Collaboration.objects.filter(
+    #     user=user,
+    #     delivery_deadline__gte=today
+    # ).exclude(
+    #     status__in=["delivered", "paid"]
+    # ).count()
 
     # Total paid amount
     total_paid_amount = Collaboration.objects.filter(user=user, status='paid').aggregate(Sum('amount'))['amount__sum'] or 0
@@ -251,19 +251,64 @@ def dashboard_view(request):
         for brand in top_brands_qs
     ]
 
+    # Overdue followups
+    overdue_qs = Collaboration.objects.filter(
+        user=user,
+        delivery_deadline__lt=today
+    ).exclude(
+        status__in=["delivered", "paid", "cancelled"]
+    )
+
+    overdue_deliveries = [
+        {
+            "brand": collab.brand.name,
+            "campaign": collab.campaign_name,
+            "delivery_deadline": collab.delivery_deadline,
+            "status": collab.status,
+        }
+        for collab in overdue_qs
+    ]
+
+    # Upcoming deliveries
+    upcoming_qs = Collaboration.objects.filter(
+        user=user,
+        delivery_deadline__gte=today
+    ).exclude(
+        status__in=["delivered", "paid", "cancelled"]
+    )
+
+    upcoming_deliveries = [
+        {
+            "brand": collab.brand.name,
+            "campaign": collab.campaign_name,
+            "delivery_deadline": collab.delivery_deadline,
+            "status": collab.status,
+        }
+        for collab in upcoming_qs
+    ]
+
     return Response({
+        # Stat cards
+        'total_paid_amount': total_paid_amount,
+        'total_barter_value': total_barter_value,
         'total_brands': total_brands,
         'total_collabs': total_collabs,
+
+        # Pie Charts
         'status_counts': {item['status']: item['count'] for item in status_counts},
         'type_counts': {item['collab_type']: item['count'] for item in  type_counts},
+
+        # Monthly bar graph data
         'monthly_data': [       {
             'month': item['month'].strftime('%Y-%m'),
             'count': item['count'],
             'total_amount': item['total_amount'] or 0,
         } for item in monthly_data],
-        'overdue_followups': overdue_followups,
-        'upcoming_deliveries': upcoming_deliveries,
-        'total_paid_amount': total_paid_amount,
-        'total_barter_value': total_barter_value,
+
+        # Brand-wise performance
         "top_brands": top_brands,
+        
+        # Reminders with details
+        'overdue_deliveries': overdue_deliveries,
+        'upcoming_deliveries': upcoming_deliveries,
     })

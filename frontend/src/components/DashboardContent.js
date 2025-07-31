@@ -139,12 +139,20 @@ const DashboardContent = () => {
           </Typography>
         </Stack>
         <Divider sx={{ mb: 2 }} />
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <ReminderCard label="Overdue Followups" count={data.overdue_followups} />
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <ReminderCard
+              label="Overdue Deliveries"
+              items={data.overdue_deliveries || []}
+              type="overdue"
+            />
           </Grid>
-          <Grid item xs={12} sm={6}>
-            <ReminderCard label="Upcoming Deliveries" count={data.upcoming_deliveries} />
+          <Grid item xs={12} md={6}>
+            <ReminderCard
+              label="Upcoming Deliveries"
+              items={data.upcoming_deliveries || []}
+              type="upcoming"
+            />
           </Grid>
         </Grid>
       </Paper>
