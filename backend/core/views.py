@@ -153,9 +153,15 @@ class GoogleIdTokenLogin(APIView):
             return Response({
                 'access_token': access_token,
                 'refresh_token': refresh_token,
+                'user': {
+                    'name': user.get_full_name() or user.username,
+                    'email': user.email,
+                    'picture': idinfo.get('picture', ''),  # from Google ID token
+                }
             })
         except Exception as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['GET'])
 def dashboard_view(request):

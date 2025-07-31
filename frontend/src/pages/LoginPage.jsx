@@ -43,6 +43,7 @@ const LoginPage = () => {
       if (response.ok) {
         localStorage.setItem('access_token', data.access_token || '');
         localStorage.setItem('refresh_token', data.refresh_token || '');
+        localStorage.setItem('user', JSON.stringify(data.user || {}));
         navigate('/');
       } else {
         setError(data?.detail || 'Token exchange failed');
