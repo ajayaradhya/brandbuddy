@@ -11,5 +11,6 @@ services:
       npm install
       npm run build
     startCommand: gunicorn config.wsgi:application --chdir backend
+    healthCheckPath: /
     envVars:
       - fromDotEnv: true
