@@ -1,24 +1,39 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Box, Typography, Paper } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Paper,
+  CircularProgress,
+  Avatar,
+  Divider,
+  Stack,
+} from '@mui/material';
 import GoogleLoginButton from '../components/GoogleLoginButton';
+import { Google as GoogleIcon } from '@mui/icons-material';
+
+const taglines = [
+  "Turn Brand Deals into Brand Wins",
+  "Collaborate Smarter. Deliver Better.",
+  "Built for Creators Who Mean Business",
+  "Where Creators Manage, Track, and Thrive",
+  "One Dashboard. Every Brand Deal.",
+];
 
 const LoginPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [taglineIndex, setTaglineIndex] = useState(0);
 
-  // Exchanges Google ID token for backend tokens
   const exchangeIdTokenForToken = async (idToken) => {
     setLoading(true);
     setError('');
     try {
       const response = await fetch('http://localhost:8000/dj-rest-auth/google/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_token: idToken }),
         credentials: 'include',
       });
@@ -28,7 +43,7 @@ const LoginPage = () => {
       if (response.ok) {
         localStorage.setItem('access_token', data.access_token || '');
         localStorage.setItem('refresh_token', data.refresh_token || '');
-        navigate('/'); // Redirect to dashboard
+        navigate('/');
       } else {
         setError(data?.detail || 'Token exchange failed');
         setLoading(false);
@@ -46,45 +61,86 @@ const LoginPage = () => {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTaglineIndex((prev) => (prev + 1) % taglines.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <Box
       sx={{
         minHeight: '100vh',
-        bgcolor: '#f4f6fa',
+        bgcolor: '#acacacff',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        p: 2,
       }}
     >
       <Paper
         elevation={8}
         sx={{
-          p: 6,
+          px: 6,
+          py: 5,
           borderRadius: 4,
-          minWidth: 340,
-          maxWidth: 380,
+          maxWidth: 420,
+          width: '100%',
           textAlign: 'center',
+          bgcolor: '#1a1a1a',
+          color: 'white',
+          animation: 'fadeIn 0.6s ease',
         }}
       >
-        <Typography variant="h4" fontWeight={700} mb={2} color="primary">
+        <Avatar
+          sx={{
+            width: 64,
+            height: 64,
+            mx: 'auto',
+            mb: 2,
+            bgcolor: '#333',
+          }}
+        >
+          <GoogleIcon sx={{ color: '#ffffffff' }} />
+        </Avatar>
+
+        <Typography variant="h4" fontWeight="bold" mb={1}>
           Brand Buddy
         </Typography>
-        <Typography variant="subtitle1" mb={4} color="text.secondary">
-          Your influencer marketing dashboard
+        <Typography
+          variant="body1"
+          sx={{ color: '#bbb', mb: 3, minHeight: 24, transition: 'opacity 0.4s ease-in-out' }}
+        >
+          {taglines[taglineIndex]}
         </Typography>
+
+        <Divider sx={{ bgcolor: '#444', mb: 3 }} />
+
         {loading ? (
-          <Typography variant="body1" color="text.secondary">
-            Logging in...
-          </Typography>
+          <Stack spacing={2} alignItems="center">
+            <CircularProgress color="inherit" />
+            <Typography variant="body2" sx={{ color: '#aaa' }}>
+              Logging in securely...
+            </Typography>
+          </Stack>
         ) : (
           <GoogleLoginButton />
         )}
+
         {error && (
-          <Typography variant="body2" color="error" mt={2}>
+          <Typography variant="body2" color="error" mt={3}>
             {error}
           </Typography>
         )}
       </Paper>
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </Box>
   );
 };
