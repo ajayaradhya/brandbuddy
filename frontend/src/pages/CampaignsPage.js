@@ -1,80 +1,88 @@
-import React, { useEffect, useState, useCallback } from 'react';
+// CampaignsPage.js
+import React, { useEffect, useState, useMemo } from 'react';
+import axios from 'axios';
 import {
-  Grid,
+  Box,
   Card,
-  CardHeader,
   CardContent,
   Typography,
-  Avatar,
-  IconButton,
-  MenuItem,
+  TextField,
+  Grid,
+  InputAdornment,
   Select,
-  FormControl,
-  InputLabel,
-  CircularProgress,
+  MenuItem,
+  IconButton,
   Pagination,
+  Chip,
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Tooltip
 } from '@mui/material';
-import InfoIcon from '@mui/icons-material/Info';
 import SearchIcon from '@mui/icons-material/Search';
-import InputAdornment from '@mui/material/InputAdornment';
-import axios from 'axios';
-import debounce from 'lodash.debounce';
+import InfoIcon from '@mui/icons-material/Info';
+
+const statusOptions = [
+  'contacted',
+  'no_reply',
+  'in_talks',
+  'confirmed',
+  'delivered',
+  'paid',
+  'cancelled',
+];
+
+const statusColorMap = {
+  contacted: '#e3f2fd',
+  no_reply: '#ffebee',
+  in_talks: '#fff8e1',
+  confirmed: '#e8f5e9',
+  delivered: '#e3f2fd',
+  paid: '#f1f8e9',
+  cancelled: '#ffebee',
+};
+
+const formatStatus = (status) =>
+  status?.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 
 const CampaignsPage = () => {
   const [campaigns, setCampaigns] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [selectedCampaign, setSelectedCampaign] = useState(null);
+  const [count, setCount] = useState(1);
+  const [openDialog, setOpenDialog] = useState(null);
 
-  const fetchCampaigns = async (search = '', status = '', pageNum = 1) => {
-    setLoading(true);
-    try {
-      const res = await axios.get(
-        `${process.env.REACT_APP_API_BASE_URL}/api/collaborations`,
-        {
-          params: {
-            page: pageNum,
-            status: status || undefined,
-            search: search || undefined
-          }
-        }
-      );
-      setCampaigns(res.data.results || []);
-      setTotalPages(Math.ceil(res.data.count / 10));
-    } catch (err) {
-      console.error('Failed to fetch campaigns:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Debounced search function
-  const debouncedFetch = useCallback(
-    debounce((query) => {
-      fetchCampaigns(query, statusFilter, 1);
-    }, 400),
-    [statusFilter]
+  const fetchCampaigns = useMemo(
+    () => async () => {
+      try {
+        const params = {
+          search,
+          status: statusFilter,
+          page,
+        };
+        const { data } = await axios.get(
+          `${process.env.REACT_APP_API_BASE_URL}/api/collaborations/`,
+          { params }
+        );
+        setCampaigns(data.results || data);
+        setCount(data.count ? Math.ceil(data.count / 10) : 1);
+      } catch (err) {
+        console.error('Error fetching campaigns:', err);
+      }
+    },
+    [search, statusFilter, page]
   );
 
   useEffect(() => {
-    fetchCampaigns(searchTerm, statusFilter, page);
-  }, [page, statusFilter]);
+    const delayDebounce = setTimeout(() => {
+      fetchCampaigns();
+    }, 400);
+    return () => clearTimeout(delayDebounce);
+  }, [fetchCampaigns]);
 
   const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearchTerm(value);
+    setSearch(e.target.value);
     setPage(1);
-    debouncedFetch(value);
   };
 
   const handleStatusChange = (e) => {
@@ -82,131 +90,118 @@ const CampaignsPage = () => {
     setPage(1);
   };
 
-  const handleViewDetails = (campaign) => {
-    setSelectedCampaign(campaign);
-  };
-
-  const handleCloseDialog = () => {
-    setSelectedCampaign(null);
-  };
-
-  const renderDetailRow = (label, value) => (
-    <Typography variant="body2" sx={{ mb: 0.5 }}>
-      <b>{label}:</b> {value || 'N/A'}
-    </Typography>
-  );
-
   return (
-    <div style={{ padding: 24 }}>
-      <Typography variant="h4" fontWeight={600} gutterBottom>
+    <Box p={3}>
+      <Typography variant="h5" mb={3} fontWeight={600}>
         Campaigns
       </Typography>
 
-      <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-        <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel>Status</InputLabel>
-          <Select value={statusFilter} label="Status" onChange={handleStatusChange}>
-            <MenuItem value="">All</MenuItem>
-            <MenuItem value="contacted">Contacted</MenuItem>
-            <MenuItem value="no_reply">No Reply</MenuItem>
-            <MenuItem value="in_talks">In Talks</MenuItem>
-            <MenuItem value="confirmed">Confirmed</MenuItem>
-            <MenuItem value="delivered">Delivered</MenuItem>
-            <MenuItem value="paid">Paid</MenuItem>
-  <MenuItem value="cancelled">Cancelled</MenuItem>
-          </Select>
-        </FormControl>
-
+      <Box display="flex" gap={2} mb={3}>
         <TextField
           fullWidth
           variant="outlined"
-          placeholder="Search Campaigns or Brands"
-          value={searchTerm}
+          placeholder="Search campaigns or brands..."
+          value={search}
           onChange={handleSearchChange}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
                 <SearchIcon />
               </InputAdornment>
-            )
+            ),
           }}
         />
-      </div>
 
-      {loading ? (
-        <CircularProgress />
-      ) : campaigns.length === 0 ? (
-        <Typography>No campaigns found.</Typography>
-      ) : (
-        <>
-          <Grid container spacing={3}>
-            {campaigns.map((campaign) => (
-              <Grid item xs={12} sm={6} md={4} key={campaign.id}>
-                <Card sx={{ height: '100%', borderRadius: 3 }}>
-                  <CardHeader
-                    avatar={
-                      campaign.brand?.logo ? (
-                        <Avatar src={campaign.brand.logo} />
-                      ) : (
-                        <Avatar>{campaign.brand?.name?.charAt(0) || '?'}</Avatar>
-                      )
-                    }
-                    title={<b>{campaign.brand?.name || 'Unnamed Brand'}</b>}
-                    subheader={campaign.status.replace(/_/g, ' ')}
-                    action={
-                      <Tooltip title="View Details">
-                        <IconButton onClick={() => handleViewDetails(campaign)}>
-                          <InfoIcon />
-                        </IconButton>
-                      </Tooltip>
-                    }
-                  />
-                  <CardContent>
-                    {renderDetailRow('Platform', campaign.platform)}
-                    {renderDetailRow('Type', campaign.collab_type)}
-                    {campaign.collab_type === 'barter' &&
-                      renderDetailRow('Barter', `${campaign.barter_item} (₹${campaign.barter_value})`)}
-                    {campaign.delivery_due_date &&
-                      renderDetailRow('Delivery By', new Date(campaign.delivery_due_date).toLocaleDateString())}
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+        <Select
+          value={statusFilter}
+          displayEmpty
+          onChange={handleStatusChange}
+          sx={{ minWidth: 180 }}
+        >
+          <MenuItem value="">All Statuses</MenuItem>
+          {statusOptions.map((s) => (
+            <MenuItem key={s} value={s}>
+              {formatStatus(s)}
+            </MenuItem>
+          ))}
+        </Select>
+      </Box>
 
-          <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center' }}>
-            <Pagination count={totalPages} page={page} onChange={(e, val) => setPage(val)} />
-          </div>
-        </>
-      )}
-
-      <Dialog open={!!selectedCampaign} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>Campaign Details</DialogTitle>
-        <DialogContent dividers>
-          {selectedCampaign && (
-            <>
-              {renderDetailRow('Brand', selectedCampaign.brand?.name)}
-              {renderDetailRow('Email', selectedCampaign.brand?.email)}
-              {renderDetailRow('Platform', selectedCampaign.platform)}
-              {renderDetailRow('Type', selectedCampaign.collab_type)}
-              {renderDetailRow('Status', selectedCampaign.status)}
-              {selectedCampaign.collab_type === 'barter' &&
-                renderDetailRow('Barter Item', `${selectedCampaign.barter_item} (₹${selectedCampaign.barter_value})`)}
-              {selectedCampaign.delivery_due_date &&
-                renderDetailRow('Delivery Due', new Date(selectedCampaign.delivery_due_date).toLocaleDateString())}
-              {selectedCampaign.notes && (
-                <Typography variant="body2" sx={{ mt: 2 }}>
-                  <b>Notes:</b> {selectedCampaign.notes}
+      <Grid container spacing={3}>
+        {campaigns.map((campaign) => (
+          <Grid item xs={12} sm={6} md={4} key={campaign.id}>
+            <Card
+              sx={{
+                backgroundColor: statusColorMap[campaign.status] || '#fff',
+                height: '100%',
+                borderRadius: 3,
+              }}
+            >
+              <CardContent>
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                  <Typography variant="h6" fontWeight={600}>
+                    {campaign.campaign_name}
+                  </Typography>
+                  <IconButton onClick={() => setOpenDialog(campaign)}>
+                    <InfoIcon />
+                  </IconButton>
+                </Box>
+                <Typography variant="subtitle2" color="text.secondary">
+                  {formatStatus(campaign.status)}
                 </Typography>
-              )}
-            </>
-          )}
+                <Typography variant="body2" mt={1}>
+                  <strong>Brand:</strong> {campaign.brand.name}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Email:</strong> {campaign.brand.email || '—'}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Platform:</strong> {campaign.platform}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Type:</strong> {campaign.collab_type}
+                </Typography>
+                {campaign.barter_product && (
+                  <Typography variant="body2">
+                    <strong>Barter:</strong> {campaign.barter_product} (₹{campaign.barter_value})
+                  </Typography>
+                )}
+                <Typography variant="body2">
+                  <strong>Delivery by:</strong> {campaign.delivery_deadline}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      <Box mt={4} display="flex" justifyContent="center">
+        <Pagination
+          count={count}
+          page={page}
+          onChange={(e, val) => setPage(val)}
+          color="primary"
+        />
+      </Box>
+
+      <Dialog open={!!openDialog} onClose={() => setOpenDialog(null)} fullWidth maxWidth="sm">
+        <DialogTitle>{openDialog?.campaign_name}</DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="subtitle1" mb={2}>
+            <strong>Brand:</strong> {openDialog?.brand.name} ({openDialog?.brand.email})
+          </Typography>
+          <Typography variant="body2" mb={1}><strong>Status:</strong> {formatStatus(openDialog?.status)}</Typography>
+          <Typography variant="body2" mb={1}><strong>Platform:</strong> {openDialog?.platform}</Typography>
+          <Typography variant="body2" mb={1}><strong>Type:</strong> {openDialog?.collab_type}</Typography>
+          <Typography variant="body2" mb={1}><strong>Amount:</strong> ₹{openDialog?.amount || '—'}</Typography>
+          <Typography variant="body2" mb={1}><strong>Barter:</strong> {openDialog?.barter_product || '—'} (₹{openDialog?.barter_value || 0})</Typography>
+          <Typography variant="body2" mb={1}><strong>Pitch Date:</strong> {openDialog?.pitch_date}</Typography>
+          <Typography variant="body2" mb={1}><strong>Follow-up Date:</strong> {openDialog?.followup_date}</Typography>
+          <Typography variant="body2" mb={2}><strong>Delivery Deadline:</strong> {openDialog?.delivery_deadline}</Typography>
+          <Typography variant="body2"><strong>Notes:</strong> {openDialog?.notes || '—'}</Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Close</Button>
-        </DialogActions>
       </Dialog>
-    </div>
+    </Box>
   );
 };
 
