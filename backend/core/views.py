@@ -1,5 +1,6 @@
 from datetime import date, datetime
 
+from core.pagination import CollaborationPagination
 from core.filters import CollaborationFilter
 from core.models import Brand, Collaboration
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Sum
@@ -32,10 +33,13 @@ class BrandViewSet(viewsets.ModelViewSet):
 
 
 class CollaborationViewSet(viewsets.ModelViewSet):
-    queryset = Collaboration.objects.all().select_related('brand')
+    queryset = Collaboration.objects.select_related('brand')
     serializer_class = CollaborationSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = CollaborationFilter
+    search_fields = ['campaign_name', 'brand__name']
+    ordering_fields = ['pitch_date', 'followup_date', 'delivery_deadline', 'amount', 'created_at']
+    pagination_class = CollaborationPagination
 
     @swagger_auto_schema(manual_parameters=[
         openapi.Parameter('pitch_date__gte', openapi.IN_QUERY, description="Pitch date ≥ (YYYY-MM-DD)", type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
@@ -44,29 +48,32 @@ class CollaborationViewSet(viewsets.ModelViewSet):
         openapi.Parameter('followup_date__lte', openapi.IN_QUERY, description="Follow-up date ≤ (YYYY-MM-DD)", type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
         openapi.Parameter('status', openapi.IN_QUERY, description="Collaboration status", type=openapi.TYPE_STRING),
         openapi.Parameter('platform', openapi.IN_QUERY, description="Platform (instagram/youtube/both)", type=openapi.TYPE_STRING),
-        openapi.Parameter('collab_type', openapi.IN_QUERY, description="Type (barter/paid/etc.)", type=openapi.TYPE_STRING),
+        openapi.Parameter('collab_type', openapi.IN_QUERY, description="Type (barter/paid/gifting/etc.)", type=openapi.TYPE_STRING),
+        openapi.Parameter('campaign_name', openapi.IN_QUERY, description="Filter by campaign name (partial match)", type=openapi.TYPE_STRING),
+        openapi.Parameter('brand_name', openapi.IN_QUERY, description="Filter by brand name (partial match)", type=openapi.TYPE_STRING),
+        openapi.Parameter('ordering', openapi.IN_QUERY, description="Order by fields (e.g. -amount, pitch_date)", type=openapi.TYPE_STRING),
     ])
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
-    
+
     @swagger_auto_schema(
-        operation_description="Get collaborations with overdue follow-ups (followup_date < today and not closed/completed)."
+        operation_description="Get collaborations with overdue follow-ups (followup_date < today and not delivered/paid)."
     )
     @action(detail=False, methods=["get"], url_path="overdue-followups")
     def overdue_followups(self, request):
         today = date.today()
-        overdue_qs = self.get_queryset().filter(
-            followup_date__lt=today,
+        qs = self.get_queryset().filter(
+            followup_date__lt=today
         ).exclude(
             status__in=["delivered", "paid"]
         )
 
-        page = self.paginate_queryset(overdue_qs)
+        page = self.paginate_queryset(qs)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(overdue_qs, many=True)
+        serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
 
 

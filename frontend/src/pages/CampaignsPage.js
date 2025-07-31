@@ -16,6 +16,8 @@ import {
   Paper,
   Box,
   Chip,
+  Pagination,
+  Stack,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import axios from 'axios';
@@ -23,33 +25,40 @@ import dayjs from 'dayjs';
 
 const CampaignsPage = () => {
   const [campaigns, setCampaigns] = useState([]);
+  const [count, setCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     fetchCampaigns();
-  }, [searchTerm, statusFilter, typeFilter]);
+  }, [searchTerm, statusFilter, typeFilter, page]);
 
   const fetchCampaigns = async () => {
     try {
-        const response = await axios.get(
-        `${process.env.REACT_APP_API_BASE_URL}/api/collaborations`,
-        {
-            params: {
-            search: searchTerm,
-            status: statusFilter,
-            collab_type: typeFilter,
-            },
-        }
-        );
-        setCampaigns(response.data);
+      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/collaborations`, {
+        params: {
+          search: searchTerm,
+          status: statusFilter,
+          collab_type: typeFilter,
+          page,
+          page_size: pageSize,
+        },
+      });
+      setCampaigns(response.data.results);
+      setCount(response.data.count);
     } catch (error) {
-        console.error('Error fetching campaigns:', error);
+      console.error('Error fetching campaigns:', error);
     }
-    };
+  };
 
-  const formatDate = (date) => dayjs(date).format('MMM DD, YYYY');
+  const handlePageChange = (event, value) => {
+    setPage(value);
+  };
+
+  const formatDate = (date) => (date ? dayjs(date).format('MMM DD, YYYY') : '-');
 
   return (
     <Container maxWidth="xl" sx={{ mt: 4 }}>
@@ -62,7 +71,10 @@ const CampaignsPage = () => {
         <TextField
           placeholder="Search Campaigns or Brands..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setPage(1); // reset page on search
+          }}
           fullWidth
           InputProps={{
             startAdornment: (
@@ -77,7 +89,10 @@ const CampaignsPage = () => {
           <InputLabel>Status</InputLabel>
           <Select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPage(1); // reset page on filter
+            }}
             label="Status"
           >
             <MenuItem value="">All</MenuItem>
@@ -93,7 +108,10 @@ const CampaignsPage = () => {
           <InputLabel>Type</InputLabel>
           <Select
             value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
+            onChange={(e) => {
+              setTypeFilter(e.target.value);
+              setPage(1); // reset page on filter
+            }}
             label="Type"
           >
             <MenuItem value="">All</MenuItem>
@@ -166,6 +184,17 @@ const CampaignsPage = () => {
           </TableBody>
         </Table>
       </Paper>
+
+      {/* Pagination Controls */}
+      <Stack spacing={2} alignItems="center" mt={3}>
+        <Pagination
+          count={Math.ceil(count / pageSize)}
+          page={page}
+          onChange={handlePageChange}
+          color="primary"
+          shape="rounded"
+        />
+      </Stack>
     </Container>
   );
 };
