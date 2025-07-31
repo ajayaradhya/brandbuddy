@@ -1,215 +1,138 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
-  Container,
-  Typography,
-  TextField,
-  InputAdornment,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  Paper,
   Box,
+  Card,
+  CardContent,
+  CardHeader,
   Chip,
-  Pagination,
+  Grid,
   Stack,
+  TextField,
+  Typography,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import axios from 'axios';
-import dayjs from 'dayjs';
+import { format } from 'date-fns';
+import debounce from 'lodash.debounce';
+
+const statusColorMap = {
+  in_talks: 'warning',
+  delivered: 'success',
+  paid: 'primary',
+  declined: 'error',
+};
+
+const formatStatus = (s) =>
+  s.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+
+const capitalize = (s) =>
+  typeof s === 'string' ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 
 const CampaignsPage = () => {
   const [campaigns, setCampaigns] = useState([]);
-  const [count, setCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
-  const [page, setPage] = useState(1);
-  const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const pageSize = 10;
-
-  useEffect(() => {
-    fetchCampaigns();
-  }, [debouncedSearch, statusFilter, typeFilter]);
-
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
-    }, 500); // 500ms debounce
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [searchTerm]);
-
-
-  const fetchCampaigns = async () => {
+  const fetchCampaigns = async (query = '') => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/collaborations`, {
-        params: {
-          search: debouncedSearch,
-          status: statusFilter,
-          collab_type: typeFilter,
-          page,
-          page_size: pageSize,
-        },
-      });
-      setCampaigns(response.data.results);
-      setCount(response.data.count);
-    } catch (error) {
-      console.error('Error fetching campaigns:', error);
+      const baseUrl = process.env.REACT_APP_API_BASE_URL;
+      const res = await fetch(
+        `${baseUrl}/api/collaborations/?search=${encodeURIComponent(query)}`
+      );
+      const data = await res.json();
+      setCampaigns(data.results || []);
+    } catch (err) {
+      console.error('Error fetching campaigns:', err);
     }
   };
 
-  const handlePageChange = (event, value) => {
-    setPage(value);
+  useEffect(() => {
+    fetchCampaigns();
+  }, []);
+
+  const handleSearchChange = (e) => {
+    const val = e.target.value;
+    setSearchTerm(val);
+    debouncedSearch(val);
   };
 
-  const formatDate = (date) => (date ? dayjs(date).format('MMM DD, YYYY') : '-');
+  const debouncedSearch = useCallback(
+    debounce((query) => fetchCampaigns(query), 500),
+    []
+  );
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom fontWeight={600}>
+    <Box p={3}>
+      <Typography variant="h4" mb={3} fontWeight={600}>
         Campaigns
       </Typography>
 
-      {/* Filters */}
-      <Box display="flex" flexWrap="wrap" gap={2} mb={3}>
-        <TextField
-          placeholder="Search Campaigns or Brands..."
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setPage(1); // reset page on search
-          }}
-          fullWidth
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-        />
+      <TextField
+        fullWidth
+        placeholder="Search by brand or campaign name"
+        variant="outlined"
+        value={searchTerm}
+        onChange={handleSearchChange}
+        InputProps={{
+          startAdornment: (
+            <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} />
+          ),
+        }}
+        sx={{ mb: 4 }}
+      />
 
-        <FormControl sx={{ minWidth: 160 }}>
-          <InputLabel>Status</InputLabel>
-          <Select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(1); // reset page on filter
-            }}
-            label="Status"
-          >
-            <MenuItem value="">All</MenuItem>
-            <MenuItem value="in_talks">In Talks</MenuItem>
-            <MenuItem value="confirmed">Confirmed</MenuItem>
-            <MenuItem value="delivered">Delivered</MenuItem>
-            <MenuItem value="paid">Paid</MenuItem>
-            <MenuItem value="cancelled">Cancelled</MenuItem>
-          </Select>
-        </FormControl>
+      <Grid container spacing={3}>
+        {campaigns.map((c) => (
+          <Grid item xs={12} sm={6} md={4} lg={3} key={c.id}>
+            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <CardHeader
+                title={c.campaign_name}
+                subheader={c.brand?.name}
+                sx={{
+                  '& .MuiCardHeader-title': {
+                    fontWeight: 600,
+                    fontSize: '1.1rem',
+                  },
+                  '& .MuiCardHeader-subheader': {
+                    fontSize: '0.9rem',
+                    color: 'text.secondary',
+                  },
+                  pb: 0,
+                }}
+              />
 
-        <FormControl sx={{ minWidth: 160 }}>
-          <InputLabel>Type</InputLabel>
-          <Select
-            value={typeFilter}
-            onChange={(e) => {
-              setTypeFilter(e.target.value);
-              setPage(1); // reset page on filter
-            }}
-            label="Type"
-          >
-            <MenuItem value="">All</MenuItem>
-            <MenuItem value="paid">Paid</MenuItem>
-            <MenuItem value="barter">Barter</MenuItem>
-            <MenuItem value="gifted">Gifted</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
+              <CardContent sx={{ flexGrow: 1 }}>
+                <Chip
+                  label={formatStatus(c.status)}
+                  color={statusColorMap[c.status] || 'default'}
+                  size="small"
+                  variant="outlined"
+                  sx={{ mb: 2 }}
+                />
 
-      {/* Campaign Table */}
-      <Paper sx={{ overflowX: 'auto' }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Brand</TableCell>
-              <TableCell>Campaign</TableCell>
-              <TableCell>Platform</TableCell>
-              <TableCell>Type</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Pitch</TableCell>
-              <TableCell>Follow-Up</TableCell>
-              <TableCell>Deadline</TableCell>
-              <TableCell>Amount</TableCell>
-              <TableCell>Deliverables</TableCell>
-              <TableCell>Notes</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {campaigns.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell>
-                  <a
-                    href={item.brand.website || '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ textDecoration: 'none', color: '#1976d2' }}
-                  >
-                    {item.brand.name}
-                  </a>
-                </TableCell>
-                <TableCell>{item.campaign_name}</TableCell>
-                <TableCell>{item.platform}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={item.collab_type}
-                    color={
-                      item.collab_type === 'paid'
-                        ? 'success'
-                        : item.collab_type === 'barter'
-                        ? 'primary'
-                        : 'default'
-                    }
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Chip label={item.status} variant="outlined" size="small" />
-                </TableCell>
-                <TableCell>{formatDate(item.pitch_date)}</TableCell>
-                <TableCell>{formatDate(item.followup_date)}</TableCell>
-                <TableCell>{formatDate(item.delivery_deadline)}</TableCell>
-                <TableCell>
-                  {item.amount ? `₹${parseFloat(item.amount).toFixed(2)}` : '-'}
-                </TableCell>
-                <TableCell>{item.deliverables}</TableCell>
-                <TableCell>{item.notes || '-'}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Paper>
-
-      {/* Pagination Controls */}
-      <Stack spacing={2} alignItems="center" mt={3}>
-        <Pagination
-          count={Math.ceil(count / pageSize)}
-          page={page}
-          onChange={handlePageChange}
-          color="primary"
-          shape="rounded"
-        />
-      </Stack>
-    </Container>
+                <Stack spacing={1}>
+                  <Typography variant="body2" color="text.secondary">
+                    <strong>Platform:</strong> {capitalize(c.platform)}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    <strong>Type:</strong> {capitalize(c.collab_type)}
+                  </Typography>
+                  {c.barter_product && (
+                    <Typography variant="body2" color="text.secondary">
+                      <strong>Barter:</strong> {c.barter_product} (₹{parseFloat(c.barter_value).toFixed(2)})
+                    </Typography>
+                  )}
+                  {c.delivery_deadline && (
+                    <Typography variant="body2" color="text.secondary">
+                      <strong>Delivery by:</strong>{' '}
+                      {format(new Date(c.delivery_deadline), 'dd/MM/yyyy')}
+                    </Typography>
+                  )}
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
   );
 };
 
