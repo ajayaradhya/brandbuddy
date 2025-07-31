@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Container,
   Typography,
@@ -30,17 +30,31 @@ const CampaignsPage = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [page, setPage] = useState(1);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
   const pageSize = 10;
 
   useEffect(() => {
     fetchCampaigns();
-  }, [searchTerm, statusFilter, typeFilter, page]);
+  }, [debouncedSearch, statusFilter, typeFilter]);
+
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 500); // 500ms debounce
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
+
 
   const fetchCampaigns = async () => {
     try {
       const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/collaborations`, {
         params: {
-          search: searchTerm,
+          search: debouncedSearch,
           status: statusFilter,
           collab_type: typeFilter,
           page,

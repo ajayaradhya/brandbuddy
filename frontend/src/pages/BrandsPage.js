@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   Grid,
   Card,
@@ -30,9 +30,12 @@ const BrandsPage = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  const debounceTimeoutRef = useRef(null);
 
   const fetchBrands = async (query = '') => {
     try {
+      setLoading(true);
       const response = await axios.get(
         `${process.env.REACT_APP_API_BASE_URL}/api/brands?search=${query}`
       );
@@ -44,8 +47,17 @@ const BrandsPage = () => {
     }
   };
 
+  const debouncedFetch = useCallback((query) => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    debounceTimeoutRef.current = setTimeout(() => {
+      fetchBrands(query);
+    }, 400); // debounce delay in ms
+  }, []);
+
   useEffect(() => {
-    fetchBrands();
+    fetchBrands(); // initial load
   }, []);
 
   const handleEditClick = (brand) => {
@@ -113,10 +125,10 @@ const BrandsPage = () => {
     return `https://www.instagram.com/${username}`;
   };
 
-  const handleSearchChange = async (e) => {
+  const handleSearchChange = (e) => {
     const query = e.target.value;
     setSearchTerm(query);
-    fetchBrands(query);
+    debouncedFetch(query);
   };
 
   return (
