@@ -22,7 +22,7 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
-from core.views import GoogleLogin
+from core.views import GoogleIdTokenLogin
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -54,7 +54,9 @@ urlpatterns = [
 
     path('dj-rest-auth/', include('dj_rest_auth.urls')),
     path('dj-rest-auth/registration/', include('dj_rest_auth.registration.urls')),
-    path("dj-rest-auth/google/", GoogleLogin.as_view(), name="google_login"),
+
+    
+    path('dj-rest-auth/google/', GoogleIdTokenLogin.as_view(), name='google-id-token-login'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

@@ -1,17 +1,13 @@
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
-import axios from 'axios';
 
 const GoogleLoginButton = () => {
-  const handleSuccess = async (credentialResponse) => {
-    try {
-      const response = await axios.post('http://localhost:8000/dj-rest-auth/google/', {
-        access_token: credentialResponse.credential,  // This is the Google access token
-      });
-
-      console.log('Login Success:', response.data);
-      // Save tokens, redirect, etc.
-    } catch (error) {
-      console.error('Login Failed:', error.response?.data || error.message);
+  // Handles successful login and redirects with code
+  const handleSuccess = (credentialResponse) => {
+    // Send the ID token to /login with id_token param
+    if (credentialResponse.credential) {
+      window.location.href = `/login?id_token=${credentialResponse.credential}`;
+    } else {
+      alert('Google login did not return an ID token.');
     }
   };
 
@@ -20,8 +16,9 @@ const GoogleLoginButton = () => {
       <GoogleLogin
         onSuccess={handleSuccess}
         onError={() => {
-          console.log('Login Failed');
+          alert('Google login failed');
         }}
+        useOneTap={false}
       />
     </GoogleOAuthProvider>
   );

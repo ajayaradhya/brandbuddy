@@ -16,6 +16,10 @@ from rest_framework import filters, viewsets
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework import status
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+from django.contrib.auth import get_user_model
 
 from .models import Brand, Collaboration
 from .serializers import BrandSerializer, CollaborationSerializer
@@ -122,6 +126,35 @@ class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
 
 
+class GoogleIdTokenLogin(APIView):
+    def post(self, request):
+        id_token_str = request.data.get('id_token')
+        if not id_token_str:
+            return Response({'detail': 'Missing id_token'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            # Verify the token
+            idinfo = id_token.verify_oauth2_token(
+                id_token_str,
+                google_requests.Request(),
+                "2088540553-d4n5kbui8p5tkbef06q7kdpkl432gsr2.apps.googleusercontent.com"
+            )
+            email = idinfo.get('email')
+            if not email:
+                return Response({'detail': 'No email in token'}, status=status.HTTP_400_BAD_REQUEST)
+            User = get_user_model()
+            user, created = User.objects.get_or_create(email=email, defaults={
+                'username': email.split('@')[0],
+            })
+            # Here, generate your own access/refresh tokens for the user
+            # For example, using SimpleJWT or your auth system
+            # access_token = ...
+            # refresh_token = ...
+            return Response({
+                'access_token': 'your_generated_access_token',
+                'refresh_token': 'your_generated_refresh_token',
+            })
+        except Exception as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
 def dashboard_view(request):
