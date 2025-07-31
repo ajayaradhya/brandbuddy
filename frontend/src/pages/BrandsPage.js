@@ -220,8 +220,8 @@ const BrandsPage = () => {
                   }
                   action={
                     <Tooltip title="Edit">
-                      <IconButton onClick={() => handleEditClick(brand)}>
-                        <EditIcon />
+                      <IconButton onClick={() => handleEditClick(brand)} disabled={true}>
+                        <EditIcon/>
                       </IconButton>
                     </Tooltip>
                   }
