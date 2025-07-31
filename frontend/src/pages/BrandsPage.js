@@ -16,9 +16,11 @@ import {
   TextField,
   CircularProgress,
   InputAdornment,
+  Box, // <-- Add Box for layout
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import SearchIcon from '@mui/icons-material/Search';
+import AddIcon from '@mui/icons-material/Add'; // <-- Import Add icon
 import axios from 'axios';
 
 const BrandsPage = () => {
@@ -88,6 +90,23 @@ const BrandsPage = () => {
     }
   };
 
+  // Add this function to handle create
+  const handleCreateBrand = () => {
+    setSelectedBrand({
+      name: '',
+      website: '',
+      instagram_handle: '',
+      email: '',
+      phone: '',
+      category: '',
+      logo: null,
+    });
+    setLogoFile(null);
+    setPreviewUrl(null);
+    setEditDialogOpen(true);
+  };
+
+  // Update handleSave to POST if no id (new brand)
   const handleSave = async () => {
     if (!selectedBrand) return;
     setSaving(true);
@@ -103,14 +122,25 @@ const BrandsPage = () => {
         formData.append('logo', logoFile);
       }
 
-      const res = await axios.put(
-        `${process.env.REACT_APP_API_BASE_URL}/api/brands/${selectedBrand.id}/`,
-        formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
-      );
-
-      const updated = brands.map((b) => (b.id === res.data.id ? res.data : b));
-      setBrands(updated);
+      let res;
+      if (selectedBrand.id) {
+        // Update existing brand
+        res = await axios.put(
+          `${process.env.REACT_APP_API_BASE_URL}/api/brands/${selectedBrand.id}/`,
+          formData,
+          { headers: { 'Content-Type': 'multipart/form-data' } }
+        );
+        const updated = brands.map((b) => (b.id === res.data.id ? res.data : b));
+        setBrands(updated);
+      } else {
+        // Create new brand
+        res = await axios.post(
+          `${process.env.REACT_APP_API_BASE_URL}/api/brands/`,
+          formData,
+          { headers: { 'Content-Type': 'multipart/form-data' } }
+        );
+        setBrands([res.data, ...brands]);
+      }
       handleDialogClose();
     } catch (err) {
       console.error('Failed to save brand:', err);
@@ -133,9 +163,19 @@ const BrandsPage = () => {
 
   return (
     <div style={{ padding: '24px' }}>
-      {/* <Typography variant="h4" gutterBottom fontWeight={600}>
-        Brand Partners
-      </Typography> */}
+      {/* Top bar with Create Brand button */}
+      <Box mb={3} display="flex" justifyContent="space-between" alignItems="center">
+        <Typography variant="h5" fontWeight={600}>
+          Brand Partners
+        </Typography>
+        <Button
+          startIcon={<AddIcon />}
+          variant="contained"
+          onClick={handleCreateBrand}
+        >
+          Create Brand
+        </Button>
+      </Box>
 
       <TextField
         placeholder="Search Brands..."
@@ -145,12 +185,12 @@ const BrandsPage = () => {
         sx={{ mb: 3 }}
         slots={{ inputAdornment: InputAdornment }}
         slotProps={{
-            inputAdornment: {
+          inputAdornment: {
             position: 'start',
             children: <SearchIcon />,
-            },
+          },
         }}
-        />
+      />
 
       {loading ? (
         <CircularProgress />
