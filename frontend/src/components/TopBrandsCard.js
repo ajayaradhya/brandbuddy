@@ -1,6 +1,6 @@
 import { Card, CardContent, Typography, Box, Stack } from "@mui/material";
 
-// Reusable stacked progress bar showing Paid and Barter percentages
+// Grayscale stacked progress bar
 function BrandProgressBar({ totalPaid, totalBarter }) {
   const total = totalPaid + totalBarter;
   const paidPercent = total ? (totalPaid / total) * 100 : 0;
@@ -8,34 +8,45 @@ function BrandProgressBar({ totalPaid, totalBarter }) {
 
   return (
     <>
-      <Box sx={{ position: 'relative', height: 10, borderRadius: 5, backgroundColor: '#e0e0e0', overflow: 'hidden' }}>
+      <Box
+        sx={{
+          position: 'relative',
+          height: 10,
+          borderRadius: 5,
+          backgroundColor: '#e0e0e0',
+          overflow: 'hidden',
+          mt: 1,
+        }}
+      >
         <Box
           sx={{
             width: `${paidPercent}%`,
             height: '100%',
-            bgcolor: '#1976d2',
+            bgcolor: '#222', // dark gray/black for Paid
             position: 'absolute',
+            transition: 'width 0.4s cubic-bezier(.4,2,.6,1)',
           }}
         />
         <Box
           sx={{
             width: `${barterPercent}%`,
             height: '100%',
-            bgcolor: '#f9a825',
+            bgcolor: '#bdbdbd', // light gray for Barter
             position: 'absolute',
             left: `${paidPercent}%`,
+            transition: 'width 0.4s cubic-bezier(.4,2,.6,1)',
           }}
         />
       </Box>
 
       <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Box sx={{ width: 10, height: 10, bgcolor: '#1976d2', mr: 0.5 }} />
-          <Typography variant="caption">Paid</Typography>
+          <Box sx={{ width: 10, height: 10, bgcolor: '#222', mr: 0.5, borderRadius: 1 }} />
+          <Typography variant="caption" color="text.primary">Paid</Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Box sx={{ width: 10, height: 10, bgcolor: '#f9a825', mr: 0.5 }} />
-          <Typography variant="caption">Barter</Typography>
+          <Box sx={{ width: 10, height: 10, bgcolor: '#bdbdbd', mr: 0.5, borderRadius: 1 }} />
+          <Typography variant="caption" color="text.secondary">Barter</Typography>
         </Box>
       </Stack>
     </>
@@ -44,25 +55,44 @@ function BrandProgressBar({ totalPaid, totalBarter }) {
 
 export default function TopBrandsCard({ data }) {
   return (
-    <Card sx={{ flexGrow: 1, width: "100%", height: 400 }}>
-      <CardContent sx={{ width:"100%", height: "100%" }}>
-        <Typography variant="h6" gutterBottom>
-          Top Performing Brands (by Total Value)
-        </Typography>
+    <Card
+      sx={{
+        flexGrow: 1,
+        width: "100%",
+        height: 400,
+        overflowY: "auto",
+        bgcolor: "#fff",
+        borderRadius: 3,
+        boxShadow: "0 2px 12px 0 rgba(0,0,0,0.06)",
+      }}
+    >
+      <CardContent sx={{ width: "100%", height: "100%" }}>
         {data.length === 0 ? (
-          <Typography variant="body2" color="textSecondary">No data available</Typography>
+          <Typography variant="body2" color="textSecondary">
+            No data available
+          </Typography>
         ) : (
           data.map((brand, index) => (
-            <Box key={index} sx={{ mt: 2, p: 2, borderRadius: 2, bgcolor: '#f5f5f5' }}>
+            <Box
+              key={index}
+              sx={{
+                mt: 2,
+                p: 2,
+                borderRadius: 2,
+                bgcolor: "#f7f7f7",
+                boxShadow: "0 1px 4px 0 rgba(0,0,0,0.03)",
+                transition: "box-shadow 0.2s",
+                "&:hover": { boxShadow: "0 2px 8px 0 rgba(0,0,0,0.08)" }
+              }}
+            >
               <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="subtitle1" fontWeight="bold">
+                <Typography variant="subtitle1" fontWeight="bold" color="text.primary">
                   {index + 1}. {brand.name}
                 </Typography>
                 <Typography variant="subtitle2" color="text.secondary">
                   ₹ {brand.total_value.toLocaleString()} • {brand.total_collabs} Collabs
                 </Typography>
               </Stack>
-
               <BrandProgressBar
                 totalPaid={brand.total_paid}
                 totalBarter={brand.total_barter}
