@@ -88,7 +88,7 @@ export default function CampaignsPage() {
   return (
     <Box p={3}>
       <Box mb={3} display="flex" justifyContent="space-between" alignItems="center">
-        <Typography variant="h5">Campaigns</Typography>
+        <Typography variant="h5"></Typography>
         <Button startIcon={<Add />} variant="contained" onClick={handleCreate}>Add Campaign</Button>
       </Box>
 
