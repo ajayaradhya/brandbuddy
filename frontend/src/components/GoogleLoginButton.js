@@ -1,4 +1,4 @@
-import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+import { GoogleLogin } from '@react-oauth/google';
 
 const GoogleLoginButton = () => {
   // Handles successful login and redirects with code
@@ -12,15 +12,13 @@ const GoogleLoginButton = () => {
   };
 
   return (
-    <GoogleOAuthProvider clientId="2088540553-d4n5kbui8p5tkbef06q7kdpkl432gsr2.apps.googleusercontent.com">
-      <GoogleLogin
-        onSuccess={handleSuccess}
-        onError={() => {
-          alert('Google login failed');
-        }}
-        useOneTap={false}
-      />
-    </GoogleOAuthProvider>
+    <GoogleLogin
+      onSuccess={handleSuccess}
+      onError={() => {
+        alert('Google login failed');
+      }}
+      useOneTap={false}
+    />
   );
 };
 

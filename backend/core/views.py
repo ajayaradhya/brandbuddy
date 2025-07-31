@@ -5,6 +5,7 @@ from core.filters import CollaborationFilter
 from core.models import Brand, Collaboration
 from core.pagination import CollaborationPagination
 from dj_rest_auth.registration.views import SocialLoginView
+from django.contrib.auth import get_user_model
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Sum
 from django.db.models.functions import Coalesce, TruncMonth
 from django.utils import timezone
@@ -12,14 +13,13 @@ from django.utils.timezone import localtime, now
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import filters, viewsets
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import status
-from google.oauth2 import id_token
-from google.auth.transport import requests as google_requests
-from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import Brand, Collaboration
 from .serializers import BrandSerializer, CollaborationSerializer
@@ -145,13 +145,14 @@ class GoogleIdTokenLogin(APIView):
             user, created = User.objects.get_or_create(email=email, defaults={
                 'username': email.split('@')[0],
             })
-            # Here, generate your own access/refresh tokens for the user
-            # For example, using SimpleJWT or your auth system
-            # access_token = ...
-            # refresh_token = ...
+            
+            # Generate JWT tokens using SimpleJWT
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+            refresh_token = str(refresh)
             return Response({
-                'access_token': 'your_generated_access_token',
-                'refresh_token': 'your_generated_refresh_token',
+                'access_token': access_token,
+                'refresh_token': refresh_token,
             })
         except Exception as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
