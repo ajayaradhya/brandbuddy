@@ -4,7 +4,7 @@ import {
   TextField, Button, MenuItem, Grid, Select,
   InputLabel, FormControl
 } from '@mui/material';
-import axios from 'axios';
+import api from '../setupAxios';
 
 const statusOptions = [
   'contacted', 'no_reply', 'in_talks', 'confirmed',
@@ -30,7 +30,7 @@ export default function CampaignModal({ open, onClose, campaign, onSuccess }) {
   const [brands, setBrands] = useState([]);
 
   useEffect(() => {
-    axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/brands/`)
+    api.get(`${process.env.REACT_APP_API_BASE_URL}/api/brands/`)
       .then(res => setBrands(res.data));
   }, []);
 
@@ -71,9 +71,9 @@ export default function CampaignModal({ open, onClose, campaign, onSuccess }) {
     };
     try {
       if (campaign?.id) {
-        await axios.put(`${process.env.REACT_APP_API_BASE_URL}/api/collaborations/${campaign.id}/`, payload);
+        await api.put(`${process.env.REACT_APP_API_BASE_URL}/api/collaborations/${campaign.id}/`, payload);
       } else {
-        await axios.post(`${process.env.REACT_APP_API_BASE_URL}/api/collaborations/`, payload);
+        await api.post(`${process.env.REACT_APP_API_BASE_URL}/api/collaborations/`, payload);
       }
       onSuccess();
       onClose();

@@ -12,7 +12,7 @@ import {
   TextField,
   Typography
 } from '@mui/material';
-import axios from 'axios';
+import api from '../setupAxios';
 import debounce from 'lodash.debounce';
 import { useEffect, useState } from 'react';
 import CampaignModal from './CampaignModal';
@@ -53,7 +53,7 @@ export default function CampaignsPage() {
       page,
       page_size: PAGE_SIZE
     };
-    const res = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/collaborations/`, { params });
+    const res = await api.get(`${process.env.REACT_APP_API_BASE_URL}/api/collaborations/`, { params });
     setCampaigns(res.data.results);
     setTotalCount(res.data.count);
   };
@@ -78,7 +78,7 @@ export default function CampaignsPage() {
   };
 
   const handleDelete = async (id) => {
-    await axios.delete(`${process.env.REACT_APP_API_BASE_URL}/api/collaborations/${id}/`);
+    await api.delete(`${process.env.REACT_APP_API_BASE_URL}/api/collaborations/${id}/`);
     fetchCampaigns();
     setConfirmDelete({ open: false, id: null });
   };

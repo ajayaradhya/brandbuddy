@@ -1,7 +1,6 @@
 import { Box, Grid, CircularProgress, Typography, Paper, Divider, Stack } from "@mui/material";
 import StatCard from "./StatCard";
 import { useEffect, useState } from "react";
-import axios from "axios";
 import CollabTypePieChart from "./charts/CollabTypePieChart";
 import MonthlyBarChart from "./charts/MonthlyBarChart";
 import ReminderCard from "./ReminderCard";
@@ -13,6 +12,7 @@ import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import api from '../setupAxios';
 
 const DashboardContent = () => {
   const [data, setData] = useState(null);
@@ -22,7 +22,7 @@ const DashboardContent = () => {
   const userName = user.name || user.email || 'there';
 
   useEffect(() => {
-    axios
+    api
       .get(`${process.env.REACT_APP_API_BASE_URL}/api/dashboard-view`)
       .then((res) => setData(res.data))
       .catch((err) => console.error("API error", err));

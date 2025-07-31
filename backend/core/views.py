@@ -16,19 +16,19 @@ from drf_yasg.utils import swagger_auto_schema
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token
 from rest_framework import filters, status, viewsets
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated
 
 from .models import Brand, Collaboration
 from .serializers import BrandSerializer, CollaborationSerializer
 
 
 class BrandViewSet(viewsets.ModelViewSet):
-    queryset = Brand.objects.all().order_by('-created_at')
     serializer_class = BrandSerializer
-    permission_classes = []  # Add [IsAuthenticated] if you need auth
+    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     
     # Enable filters and search
@@ -37,15 +37,27 @@ class BrandViewSet(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'name']  # Enable sorting
     ordering = ['-created_at']
 
+    def get_queryset(self):
+        return Brand.objects.all().order_by('-created_at')
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
 
 class CollaborationViewSet(viewsets.ModelViewSet):
-    queryset = Collaboration.objects.select_related('brand')
     serializer_class = CollaborationSerializer
+    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = CollaborationFilter
     search_fields = ['campaign_name', 'brand__name']
     ordering_fields = ['pitch_date', 'followup_date', 'delivery_deadline', 'amount', 'created_at']
     pagination_class = CollaborationPagination
+
+    def get_queryset(self):
+        return Collaboration.objects.filter(user=self.request.user).select_related('brand')
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
     @swagger_auto_schema(manual_parameters=[
         openapi.Parameter('pitch_date__gte', openapi.IN_QUERY, description="Pitch date ≥ (YYYY-MM-DD)", type=openapi.TYPE_STRING, format=openapi.FORMAT_DATE),
@@ -84,9 +96,10 @@ class CollaborationViewSet(viewsets.ModelViewSet):
 
 
 class CalendarViewAPI(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         events = []
-        collabs = Collaboration.objects.select_related('brand').all()
+        collabs = Collaboration.objects.select_related('brand').filter(user=request.user)
 
         def format_date(d):
             if isinstance(d, datetime):
@@ -164,23 +177,25 @@ class GoogleIdTokenLogin(APIView):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def dashboard_view(request):
     today = now().date()
+    user = request.user
 
     # Total counts
-    total_brands = Brand.objects.count()
-    total_collabs = Collaboration.objects.count()
+    total_brands = Brand.objects.filter(user=user).count()
+    total_collabs = Collaboration.objects.filter(user=user).count()
 
     # Collabs by status
-    status_counts = Collaboration.objects.values('status').annotate(count=Count('id')).order_by('status')
+    status_counts = Collaboration.objects.filter(user=user).values('status').annotate(count=Count('id')).order_by('status')
 
     # Collabs by type
-    type_counts = Collaboration.objects.values('collab_type').annotate(count=Count('id')).order_by('collab_type')
+    type_counts = Collaboration.objects.filter(user=user).values('collab_type').annotate(count=Count('id')).order_by('collab_type')
 
     # Monthly collaborations since 6 months
     six_months_ago = today - timezone.timedelta(days=180)
     monthly_data = (
-        Collaboration.objects.filter(created_at__gte=six_months_ago)
+        Collaboration.objects.filter(user=user, created_at__gte=six_months_ago)
         .annotate(month=TruncMonth('created_at'))
         .values('month')
         .annotate(count=Count('id'), total_amount=Sum('amount'))
@@ -189,6 +204,7 @@ def dashboard_view(request):
 
     # Overdue followups
     overdue_followups = Collaboration.objects.filter(
+        user=user,
         followup_date__lt=today
     ).exclude(
         status__in=["delivered", "paid"]
@@ -196,20 +212,21 @@ def dashboard_view(request):
 
     # upcoming deliveries
     upcoming_deliveries = Collaboration.objects.filter(
+        user=user,
         delivery_deadline__gte=today
     ).exclude(
         status__in=["delivered", "paid"]
     ).count()
 
     # Total paid amount
-    total_paid_amount = Collaboration.objects.filter(status='paid').aggregate(Sum('amount'))['amount__sum'] or 0
+    total_paid_amount = Collaboration.objects.filter(user=user, status='paid').aggregate(Sum('amount'))['amount__sum'] or 0
 
     # Total barter value
-    total_barter_value = Collaboration.objects.filter(collab_type='barter').aggregate(Sum('barter_value'))['barter_value__sum'] or 0
+    total_barter_value = Collaboration.objects.filter(user=user, collab_type='barter').aggregate(Sum('barter_value'))['barter_value__sum'] or 0
 
     # Top performing brands by total paid + barter value
     top_brands_qs = (
-        Collaboration.objects
+        Collaboration.objects.filter(user=user)
         .values('brand__name')  # Group by brand name
         .annotate(
             total_collabs=Count('id'),

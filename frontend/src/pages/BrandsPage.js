@@ -21,7 +21,7 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add'; // <-- Import Add icon
-import axios from 'axios';
+import api from '../setupAxios';
 
 const BrandsPage = () => {
   const [brands, setBrands] = useState([]);
@@ -38,7 +38,7 @@ const BrandsPage = () => {
   const fetchBrands = async (query = '') => {
     try {
       setLoading(true);
-      const response = await axios.get(
+      const response = await api.get(
         `${process.env.REACT_APP_API_BASE_URL}/api/brands?search=${query}`
       );
       setBrands(response.data);
@@ -125,7 +125,7 @@ const BrandsPage = () => {
       let res;
       if (selectedBrand.id) {
         // Update existing brand
-        res = await axios.put(
+        res = await api.put(
           `${process.env.REACT_APP_API_BASE_URL}/api/brands/${selectedBrand.id}/`,
           formData,
           { headers: { 'Content-Type': 'multipart/form-data' } }
@@ -134,7 +134,7 @@ const BrandsPage = () => {
         setBrands(updated);
       } else {
         // Create new brand
-        res = await axios.post(
+        res = await api.post(
           `${process.env.REACT_APP_API_BASE_URL}/api/brands/`,
           formData,
           { headers: { 'Content-Type': 'multipart/form-data' } }

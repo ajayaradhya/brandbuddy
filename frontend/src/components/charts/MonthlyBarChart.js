@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
   LabelList
 } from "recharts";
-import axios from "axios";
+import api from "../../setupAxios";
 import { Card, CardContent, Typography } from "@mui/material";
 
 // Format number like ₹27.7k, ₹1.2L etc.
@@ -23,7 +23,7 @@ export default function MonthlyBarChart() {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/dashboard-view`)
+    api.get(`${process.env.REACT_APP_API_BASE_URL}/api/dashboard-view`)
       .then(res => {
         const formatted = res.data.monthly_data.map(item => ({
           month: item.month,

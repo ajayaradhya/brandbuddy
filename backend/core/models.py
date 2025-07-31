@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 class Brand(models.Model):
     STATUS_CHOICES = (
@@ -18,6 +19,11 @@ class Brand(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     
     created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='brands'
+    )
 
     def __str__(self):
         return self.name
@@ -77,6 +83,11 @@ class Collaboration(models.Model):
     # Meta
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)  # Useful for tracking sync or edits
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='collaborations'
+    )
 
     def __str__(self):
         return f"{self.brand.name} | {self.campaign_name or 'Unnamed'} | {self.collab_type.capitalize()} [{self.status.replace('_', ' ').title()}]"

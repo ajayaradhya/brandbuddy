@@ -18,7 +18,7 @@ import {
     Select,
     Typography
 } from '@mui/material';
-import axios from 'axios';
+import api from '../setupAxios';
 import { useEffect, useState } from 'react';
 import '../style/CalendarView.css';
 
@@ -45,7 +45,7 @@ const CalendarView = () => {
 
   useEffect(() => {
     const fetchEvents = async () => {
-      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/calendar-view`);
+      const response = await api.get(`${process.env.REACT_APP_API_BASE_URL}/api/calendar-view`);
       setEvents(response.data.events);
     };
     fetchEvents();
