@@ -1,138 +1,212 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  Box,
-  Card,
-  CardContent,
-  CardHeader,
-  Chip,
   Grid,
-  Stack,
-  TextField,
+  Card,
+  CardHeader,
+  CardContent,
   Typography,
+  Avatar,
+  IconButton,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
+  CircularProgress,
+  Pagination,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  Tooltip
 } from '@mui/material';
+import InfoIcon from '@mui/icons-material/Info';
 import SearchIcon from '@mui/icons-material/Search';
-import { format } from 'date-fns';
+import InputAdornment from '@mui/material/InputAdornment';
+import axios from 'axios';
 import debounce from 'lodash.debounce';
-
-const statusColorMap = {
-  in_talks: 'warning',
-  delivered: 'success',
-  paid: 'primary',
-  declined: 'error',
-};
-
-const formatStatus = (s) =>
-  s.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
-
-const capitalize = (s) =>
-  typeof s === 'string' ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 
 const CampaignsPage = () => {
   const [campaigns, setCampaigns] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [selectedCampaign, setSelectedCampaign] = useState(null);
 
-  const fetchCampaigns = async (query = '') => {
+  const fetchCampaigns = async (search = '', status = '', pageNum = 1) => {
+    setLoading(true);
     try {
-      const baseUrl = process.env.REACT_APP_API_BASE_URL;
-      const res = await fetch(
-        `${baseUrl}/api/collaborations/?search=${encodeURIComponent(query)}`
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_BASE_URL}/api/collaborations`,
+        {
+          params: {
+            page: pageNum,
+            status: status || undefined,
+            search: search || undefined
+          }
+        }
       );
-      const data = await res.json();
-      setCampaigns(data.results || []);
+      setCampaigns(res.data.results || []);
+      setTotalPages(Math.ceil(res.data.count / 10));
     } catch (err) {
-      console.error('Error fetching campaigns:', err);
+      console.error('Failed to fetch campaigns:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Debounced search function
+  const debouncedFetch = useCallback(
+    debounce((query) => {
+      fetchCampaigns(query, statusFilter, 1);
+    }, 400),
+    [statusFilter]
+  );
+
   useEffect(() => {
-    fetchCampaigns();
-  }, []);
+    fetchCampaigns(searchTerm, statusFilter, page);
+  }, [page, statusFilter]);
 
   const handleSearchChange = (e) => {
-    const val = e.target.value;
-    setSearchTerm(val);
-    debouncedSearch(val);
+    const value = e.target.value;
+    setSearchTerm(value);
+    setPage(1);
+    debouncedFetch(value);
   };
 
-  const debouncedSearch = useCallback(
-    debounce((query) => fetchCampaigns(query), 500),
-    []
+  const handleStatusChange = (e) => {
+    setStatusFilter(e.target.value);
+    setPage(1);
+  };
+
+  const handleViewDetails = (campaign) => {
+    setSelectedCampaign(campaign);
+  };
+
+  const handleCloseDialog = () => {
+    setSelectedCampaign(null);
+  };
+
+  const renderDetailRow = (label, value) => (
+    <Typography variant="body2" sx={{ mb: 0.5 }}>
+      <b>{label}:</b> {value || 'N/A'}
+    </Typography>
   );
 
   return (
-    <Box p={3}>
-      <Typography variant="h4" mb={3} fontWeight={600}>
+    <div style={{ padding: 24 }}>
+      <Typography variant="h4" fontWeight={600} gutterBottom>
         Campaigns
       </Typography>
 
-      <TextField
-        fullWidth
-        placeholder="Search by brand or campaign name"
-        variant="outlined"
-        value={searchTerm}
-        onChange={handleSearchChange}
-        InputProps={{
-          startAdornment: (
-            <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} />
-          ),
-        }}
-        sx={{ mb: 4 }}
-      />
+      <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
+        <FormControl sx={{ minWidth: 200 }}>
+          <InputLabel>Status</InputLabel>
+          <Select value={statusFilter} label="Status" onChange={handleStatusChange}>
+            <MenuItem value="">All</MenuItem>
+            <MenuItem value="contacted">Contacted</MenuItem>
+            <MenuItem value="no_reply">No Reply</MenuItem>
+            <MenuItem value="in_talks">In Talks</MenuItem>
+            <MenuItem value="confirmed">Confirmed</MenuItem>
+            <MenuItem value="delivered">Delivered</MenuItem>
+            <MenuItem value="paid">Paid</MenuItem>
+  <MenuItem value="cancelled">Cancelled</MenuItem>
+          </Select>
+        </FormControl>
 
-      <Grid container spacing={3}>
-        {campaigns.map((c) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={c.id}>
-            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <CardHeader
-                title={c.campaign_name}
-                subheader={c.brand?.name}
-                sx={{
-                  '& .MuiCardHeader-title': {
-                    fontWeight: 600,
-                    fontSize: '1.1rem',
-                  },
-                  '& .MuiCardHeader-subheader': {
-                    fontSize: '0.9rem',
-                    color: 'text.secondary',
-                  },
-                  pb: 0,
-                }}
-              />
+        <TextField
+          fullWidth
+          variant="outlined"
+          placeholder="Search Campaigns or Brands"
+          value={searchTerm}
+          onChange={handleSearchChange}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            )
+          }}
+        />
+      </div>
 
-              <CardContent sx={{ flexGrow: 1 }}>
-                <Chip
-                  label={formatStatus(c.status)}
-                  color={statusColorMap[c.status] || 'default'}
-                  size="small"
-                  variant="outlined"
-                  sx={{ mb: 2 }}
-                />
-
-                <Stack spacing={1}>
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>Platform:</strong> {capitalize(c.platform)}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    <strong>Type:</strong> {capitalize(c.collab_type)}
-                  </Typography>
-                  {c.barter_product && (
-                    <Typography variant="body2" color="text.secondary">
-                      <strong>Barter:</strong> {c.barter_product} (₹{parseFloat(c.barter_value).toFixed(2)})
-                    </Typography>
-                  )}
-                  {c.delivery_deadline && (
-                    <Typography variant="body2" color="text.secondary">
-                      <strong>Delivery by:</strong>{' '}
-                      {format(new Date(c.delivery_deadline), 'dd/MM/yyyy')}
-                    </Typography>
-                  )}
-                </Stack>
-              </CardContent>
-            </Card>
+      {loading ? (
+        <CircularProgress />
+      ) : campaigns.length === 0 ? (
+        <Typography>No campaigns found.</Typography>
+      ) : (
+        <>
+          <Grid container spacing={3}>
+            {campaigns.map((campaign) => (
+              <Grid item xs={12} sm={6} md={4} key={campaign.id}>
+                <Card sx={{ height: '100%', borderRadius: 3 }}>
+                  <CardHeader
+                    avatar={
+                      campaign.brand?.logo ? (
+                        <Avatar src={campaign.brand.logo} />
+                      ) : (
+                        <Avatar>{campaign.brand?.name?.charAt(0) || '?'}</Avatar>
+                      )
+                    }
+                    title={<b>{campaign.brand?.name || 'Unnamed Brand'}</b>}
+                    subheader={campaign.status.replace(/_/g, ' ')}
+                    action={
+                      <Tooltip title="View Details">
+                        <IconButton onClick={() => handleViewDetails(campaign)}>
+                          <InfoIcon />
+                        </IconButton>
+                      </Tooltip>
+                    }
+                  />
+                  <CardContent>
+                    {renderDetailRow('Platform', campaign.platform)}
+                    {renderDetailRow('Type', campaign.collab_type)}
+                    {campaign.collab_type === 'barter' &&
+                      renderDetailRow('Barter', `${campaign.barter_item} (₹${campaign.barter_value})`)}
+                    {campaign.delivery_due_date &&
+                      renderDetailRow('Delivery By', new Date(campaign.delivery_due_date).toLocaleDateString())}
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
           </Grid>
-        ))}
-      </Grid>
-    </Box>
+
+          <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center' }}>
+            <Pagination count={totalPages} page={page} onChange={(e, val) => setPage(val)} />
+          </div>
+        </>
+      )}
+
+      <Dialog open={!!selectedCampaign} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Campaign Details</DialogTitle>
+        <DialogContent dividers>
+          {selectedCampaign && (
+            <>
+              {renderDetailRow('Brand', selectedCampaign.brand?.name)}
+              {renderDetailRow('Email', selectedCampaign.brand?.email)}
+              {renderDetailRow('Platform', selectedCampaign.platform)}
+              {renderDetailRow('Type', selectedCampaign.collab_type)}
+              {renderDetailRow('Status', selectedCampaign.status)}
+              {selectedCampaign.collab_type === 'barter' &&
+                renderDetailRow('Barter Item', `${selectedCampaign.barter_item} (₹${selectedCampaign.barter_value})`)}
+              {selectedCampaign.delivery_due_date &&
+                renderDetailRow('Delivery Due', new Date(selectedCampaign.delivery_due_date).toLocaleDateString())}
+              {selectedCampaign.notes && (
+                <Typography variant="body2" sx={{ mt: 2 }}>
+                  <b>Notes:</b> {selectedCampaign.notes}
+                </Typography>
+              )}
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>Close</Button>
+        </DialogActions>
+      </Dialog>
+    </div>
   );
 };
 
