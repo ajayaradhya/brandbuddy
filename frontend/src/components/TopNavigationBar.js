@@ -18,6 +18,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import Badge from '@mui/material/Badge';
 
 const routeToTitle = {
   '/': 'Dashboard',
@@ -27,7 +28,7 @@ const routeToTitle = {
   '/settings': 'Settings',
 };
 
-const TopBar = ({ setMobileOpen }) => {
+const TopNavigationBar = ({ setMobileOpen }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const pageTitle = routeToTitle[location.pathname] || 'BrandBuddy';
@@ -43,6 +44,14 @@ const TopBar = ({ setMobileOpen }) => {
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState([
+    // Example notifications
+    { id: 1, text: 'Test Notification 1', read: true, time: '2h ago' },
+    { id: 2, text: 'Test Notification 1', read: true, time: '1d ago' },
+  ]);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   const handleAvatarClick = () => {
     setDialogOpen(true);
@@ -95,8 +104,18 @@ const TopBar = ({ setMobileOpen }) => {
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <IconButton size="small" sx={{ color: 'inherit' }}>
-              <NotificationsIcon />
+            <IconButton
+              size="small"
+              sx={{ color: 'inherit' }}
+              onClick={() => setNotifOpen(true)}
+            >
+              <Badge
+                color="error"
+                badgeContent={unreadCount}
+                invisible={unreadCount === 0}
+              >
+                <NotificationsIcon />
+              </Badge>
             </IconButton>
             <Box>
               <Avatar
@@ -165,8 +184,41 @@ const TopBar = ({ setMobileOpen }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Dialog
+        open={notifOpen}
+        onClose={() => setNotifOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3, p: 2, bgcolor: '#fafbfc' } }}
+      >
+        <DialogTitle>Notifications</DialogTitle>
+        <Divider sx={{ mb: 1 }} />
+        <DialogContent>
+          {notifications.length === 0 ? (
+            <Typography color="text.secondary">No notifications</Typography>
+          ) : (
+            notifications.map((n) => (
+              <Box key={n.id} sx={{ mb: 2 }}>
+                <Typography
+                  variant="body2"
+                  color={n.read ? 'text.secondary' : 'text.primary'}
+                >
+                  {n.text}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {n.time}
+                </Typography>
+              </Box>
+            ))
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setNotifOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
 
-export default TopBar;
+export default TopNavigationBar;

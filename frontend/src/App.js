@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 
 import Sidebar from './components/Sidebar';
-import TopBar from './components/TopBar';
+import TopNavigationBar from './components/TopNavigationBar';
 
 import DashboardContent from './components/DashboardContent';
 import BrandsPage from './pages/BrandsPage';
@@ -42,7 +42,7 @@ function App() {
                   width: { sm: `calc(100% - 240px)` },
                 }}
               >
-                <TopBar setMobileOpen={setMobileOpen} />
+                <TopNavigationBar setMobileOpen={setMobileOpen} />
                 <Routes>
                   <Route path="/" element={<ProtectedRoute><DashboardContent /></ProtectedRoute>} />
                   <Route path="/brands" element={<ProtectedRoute><BrandsPage /></ProtectedRoute>} />
