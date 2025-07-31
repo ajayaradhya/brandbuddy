@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dummy-insecure") #'django-insecure-hi9kakj%-y3rtmtovifz-6b2+=jtjye=ux3j4rhrvvvbdkr%gi'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG", "False") == "True"
+DEBUG = os.getenv("DEBUG", "").lower() == "true"
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
 
@@ -96,8 +96,8 @@ ACCOUNT_SIGNUP_FIELDS = ['username', 'email']
 
 # Redirect to frontend with token after login
 # Ensure session is stored for Google flow
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 REST_USE_JWT = True
 
 LOGIN_REDIRECT_URL = "http://localhost:3000/login"
@@ -212,7 +212,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ALLOW_ALL_ORIGINS = True  # optional, but safer to be explicit
+CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
 CORS_ALLOW_CREDENTIALS = True
 
 LOGGING = {
