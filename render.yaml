@@ -2,13 +2,16 @@ services:
   - type: web
     name: brandbuddy
     env: python
+    plan: free
     buildCommand: |
+      chmod +x build_frontend.sh
       ./build_frontend.sh
       pip install -r requirements.txt
       python manage.py collectstatic --noinput
-    startCommand: gunicorn backend.wsgi:application
+    startCommand: gunicorn config.wsgi:application --chdir backend
     envVars:
       - key: DJANGO_SETTINGS_MODULE
-        value: backend.settings
+        value: config.settings
       - key: PYTHON_VERSION
         value: 3.11
+      - fromDotEnv: true
