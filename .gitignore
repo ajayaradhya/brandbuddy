@@ -1,6 +1,24 @@
+# Python
 venv/
 __pycache__/
-*.pyc
+*.py[cod]
+*.sqlite3
 db.sqlite3
+
+# Environment variables
 .env
+
+# Django media & collected static
 backend/media/
+backend/staticfiles/
+
+# Node/Vite
+frontend-vite/node_modules/
+frontend-vite/dist/
+frontend-vite/.env
+
+# Logs and cache
+*.log
+.DS_Store
+*.bak
+*.swp
