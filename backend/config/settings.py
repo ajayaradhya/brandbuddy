@@ -125,7 +125,7 @@ ACCOUNT_LOGOUT_REDIRECT_URL = "/"
 # Static files for React (Vite)
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'templates', 'static'),  # match assetsDir
+    os.path.join(BASE_DIR, 'static'),  # match assetsDir
 ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # ✅ for collectstatic
 

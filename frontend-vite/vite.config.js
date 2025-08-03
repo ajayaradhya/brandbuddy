@@ -4,9 +4,9 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   base: "/static/",  // for Django staticfiles
   build: {
-    outDir: "../backend/templates/", // place static build into Django's static dir
+    outDir: "../backend/static/", // place static build into Django's static dir
     emptyOutDir: true,
-    assetsDir: "static",
+    assetsDir: "",
   },
   plugins: [react()],
 });
