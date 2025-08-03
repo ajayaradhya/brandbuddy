@@ -39,7 +39,7 @@ const BrandsPage = () => {
     try {
       setLoading(true);
       const response = await api.get(
-        `${process.env.REACT_APP_API_BASE_URL}/api/brands?search=${query}`
+        `${import.meta.env.VITE_API_BASE_URL}/api/brands?search=${query}`
       );
       setBrands(response.data);
     } catch (err) {
@@ -126,7 +126,7 @@ const BrandsPage = () => {
       if (selectedBrand.id) {
         // Update existing brand
         res = await api.put(
-          `${process.env.REACT_APP_API_BASE_URL}/api/brands/${selectedBrand.id}/`,
+          `${import.meta.env.VITE_API_BASE_URL}/api/brands/${selectedBrand.id}/`,
           formData,
           { headers: { 'Content-Type': 'multipart/form-data' } }
         );
@@ -135,7 +135,7 @@ const BrandsPage = () => {
       } else {
         // Create new brand
         res = await api.post(
-          `${process.env.REACT_APP_API_BASE_URL}/api/brands/`,
+          `${import.meta.env.VITE_API_BASE_URL}/api/brands/`,
           formData,
           { headers: { 'Content-Type': 'multipart/form-data' } }
         );

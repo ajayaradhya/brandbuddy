@@ -30,7 +30,7 @@ export default function CampaignModal({ open, onClose, campaign, onSuccess }) {
   const [brands, setBrands] = useState([]);
 
   useEffect(() => {
-    api.get(`${process.env.REACT_APP_API_BASE_URL}/api/brands/`)
+    api.get(`${import.meta.env.VITE_API_BASE_URL}/api/brands/`)
       .then(res => setBrands(res.data));
   }, []);
 
@@ -71,9 +71,9 @@ export default function CampaignModal({ open, onClose, campaign, onSuccess }) {
     };
     try {
       if (campaign?.id) {
-        await api.put(`${process.env.REACT_APP_API_BASE_URL}/api/collaborations/${campaign.id}/`, payload);
+        await api.put(`${import.meta.env.VITE_API_BASE_URL}/api/collaborations/${campaign.id}/`, payload);
       } else {
-        await api.post(`${process.env.REACT_APP_API_BASE_URL}/api/collaborations/`, payload);
+        await api.post(`${import.meta.env.VITE_API_BASE_URL}/api/collaborations/`, payload);
       }
       onSuccess();
       onClose();

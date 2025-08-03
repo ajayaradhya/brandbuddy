@@ -45,7 +45,7 @@ const CalendarView = () => {
 
   useEffect(() => {
     const fetchEvents = async () => {
-      const response = await api.get(`${process.env.REACT_APP_API_BASE_URL}/api/calendar-view`);
+      const response = await api.get(`${import.meta.env.VITE_API_BASE_URL}/api/calendar-view`);
       setEvents(response.data.events);
     };
     fetchEvents();

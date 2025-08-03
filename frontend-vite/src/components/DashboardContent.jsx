@@ -12,7 +12,7 @@ import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
-import api from '../setupAxios';
+import api from '../setupAxios.js';
 
 const DashboardContent = () => {
   const [data, setData] = useState(null);
@@ -23,7 +23,7 @@ const DashboardContent = () => {
 
   useEffect(() => {
     api
-      .get(`${process.env.REACT_APP_API_BASE_URL}/api/dashboard-view`)
+      .get(`${import.meta.env.VITE_API_BASE_URL}/api/dashboard-view`)
       .then((res) => setData(res.data))
       .catch((err) => console.error("API error", err));
   }, []);

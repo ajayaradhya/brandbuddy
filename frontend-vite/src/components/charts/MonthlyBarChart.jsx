@@ -23,7 +23,7 @@ export default function MonthlyBarChart() {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    api.get(`${process.env.REACT_APP_API_BASE_URL}/api/dashboard-view`)
+    api.get(`${import.meta.env.VITE_API_BASE_URL}/api/dashboard-view`)
       .then(res => {
         const formatted = res.data.monthly_data.map(item => ({
           month: item.month,
