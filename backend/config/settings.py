@@ -1,8 +1,11 @@
-from pathlib import Path
 import os
+from pathlib import Path
+
 import dj_database_url
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR.parent / '.env')
 
 # Environment Settings
 SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
@@ -51,7 +54,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'frontend-vite', 'dist')],  # include Vite dist folder
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -121,7 +124,9 @@ ACCOUNT_LOGOUT_REDIRECT_URL = "/"
 
 # Static files for React (Vite)
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'frontend-vite', 'dist', 'assets')]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'templates', 'static'),  # match assetsDir
+]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # ✅ for collectstatic
 
 # WhiteNoise config

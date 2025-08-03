@@ -17,8 +17,16 @@ frontend-vite/node_modules/
 frontend-vite/dist/
 frontend-vite/.env
 
+# Ignore Vite build output
+/backend/templates/static/
+/backend/templates/index.html
+/staticfiles/
+
+
 # Logs and cache
 *.log
 .DS_Store
 *.bak
 *.swp
+
+
