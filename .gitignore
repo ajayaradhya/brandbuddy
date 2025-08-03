@@ -18,8 +18,8 @@ frontend-vite/dist/
 frontend-vite/.env
 
 # Ignore Vite build output
-/backend/templates/static/
-/backend/templates/index.html
+/backend/static/
+/backend/index.html
 /staticfiles/
 
 
