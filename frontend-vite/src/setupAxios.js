@@ -29,7 +29,7 @@ api.interceptors.response.use(
       const refreshToken = localStorage.getItem('refresh_token');
       if (refreshToken) {
         try {
-          const res = await api.post('http://localhost:8000/api/token/refresh/', {
+          const res = await api.post(`${import.meta.env.VITE_API_BASE_URL}/api/token/refresh/`, {
             refresh: refreshToken,
           });
           localStorage.setItem('access_token', res.data.access);

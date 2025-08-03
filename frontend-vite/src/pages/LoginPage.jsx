@@ -31,7 +31,7 @@ const LoginPage = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('http://localhost:8000/dj-rest-auth/google/', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/dj-rest-auth/google/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_token: idToken }),
