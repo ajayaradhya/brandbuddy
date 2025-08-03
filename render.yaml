@@ -8,10 +8,10 @@ services:
       ./build_frontend.sh
       pip install -r requirements.txt
       python manage.py collectstatic --noinput
-    startCommand: gunicorn config.wsgi:application --chdir backend
+    startCommand: gunicorn backend.wsgi:application --log-file -
     envVars:
       - key: DJANGO_SETTINGS_MODULE
-        value: config.settings
+        value: backend.settings
       - key: PYTHON_VERSION
         value: 3.11
       - fromDotEnv: true
